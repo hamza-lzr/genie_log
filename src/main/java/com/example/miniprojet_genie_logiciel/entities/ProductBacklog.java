@@ -23,4 +23,3 @@ public class ProductBacklog {
     @OneToMany
     private List<UserStory> userStories;
 }
-
