@@ -26,15 +26,9 @@ public class UserStoryController {
 
     // Mettre à jour une User Story existante
     @PutMapping("/{id}")
-    public ResponseEntity<UserStory> updateUserStory(@PathVariable Long id,
-                                                     @RequestBody UserStory userStory) {
-        userStory.setId(id);
-        try {
-            UserStory updated = userStoryService.updateUserStory(userStory);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public UserStory updateUserStory(@PathVariable Long id, @RequestBody UserStory userStory) {
+        return userStoryService.updateUserStory(userStory, id);
+
     }
 
     // Supprimer une User Story

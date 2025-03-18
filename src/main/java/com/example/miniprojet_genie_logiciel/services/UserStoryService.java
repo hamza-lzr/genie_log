@@ -28,11 +28,20 @@ public class UserStoryService {
     }
 
     // Modifier une User Story
-    public UserStory updateUserStory(UserStory userStory) {
-        if (!userStoryRepository.existsById(userStory.getId())) {
-            throw new EntityNotFoundException("User Story not found with id: " + userStory.getId());
+    public UserStory updateUserStory(UserStory userStory, Long id) {
+        Optional<UserStory> userStoryOptional = userStoryRepository.findById(id);
+
+        if (userStoryOptional.isPresent()) {
+            UserStory existingUserStory = userStoryOptional.get();
+            existingUserStory.setPriority(userStory.getPriority());
+            existingUserStory.setStatus(userStory.getStatus());
+            existingUserStory.setValue(userStory.getValue());
+            existingUserStory.setRole(userStory.getRole());
+            existingUserStory.setAction(userStory.getAction());
+            existingUserStory.setTitle(userStory.getTitle());
+            return userStoryRepository.save(existingUserStory);
         }
-        return userStoryRepository.save(userStory);
+        else return null;
     }
 
     // Supprimer une User Story
