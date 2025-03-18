@@ -12,13 +12,19 @@ public class UserStory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column
     private String title;
 
     @Column
-    private String description;
+    private String role;
+
+    @Column
+    private String action;
+
+    @Column
+    String value;
 
     @Column
     private String priority;
