@@ -24,13 +24,11 @@ public class UserStory {
     private String action;
 
     @Column
-    private String value;
+    private String goal;
 
     @Column
-    private String priority;
-
-    @Column
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @ManyToOne
     private Epic epic;
@@ -43,5 +41,16 @@ public class UserStory {
 
     @OneToMany(mappedBy = "userStory")
     private List<Task> tasks;
+
+    @Column
+    @Enumerated(EnumType.STRING) // Stocke "Must Have", "Should Have", etc. en base
+    private Priority priority;
+
+    @Column
+    private int priorityOrder;
+
+    @Column
+    private String acceptanceCriteria;
+
 
 }

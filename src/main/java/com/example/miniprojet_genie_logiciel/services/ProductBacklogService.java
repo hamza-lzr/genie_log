@@ -75,7 +75,7 @@ public class ProductBacklogService {
     }
 
     //priorisation des userstories
-    public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
+   /* public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
         return pb.getUserStories().stream()
@@ -101,5 +101,5 @@ public class ProductBacklogService {
         }
     }
 
-
+*/
 }

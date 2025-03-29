@@ -112,7 +112,7 @@ public class ProductBacklogController {
             return ResponseEntity.notFound().build();
         }
     }
-
+/*
     // Récupérer les UserStories triées par priorité (méthode MoSCoW)
     @GetMapping("/{backlogId}/userstories/prioritized")
     public ResponseEntity<List<UserStory>> getPrioritizedUserStories(@PathVariable Long backlogId) {
@@ -123,4 +123,6 @@ public class ProductBacklogController {
             return ResponseEntity.notFound().build();
         }
     }
+
+ */
 }

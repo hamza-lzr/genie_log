@@ -80,7 +80,7 @@ public class SprintBacklogService {
         return sprintbacklogrepository.save(sprint);
     }
 
-    // Suivi et mise à jour de l'état d'une User Story dans le Sprint Backlog
+   /* // Suivi et mise à jour de l'état d'une User Story dans le Sprint Backlog
     public SprintBacklog updateUserStoryStatus(Long sprintId, Long userStoryId, String newStatus) {
         SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
                 .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
@@ -91,6 +91,8 @@ public class SprintBacklogService {
         });
         return sprintbacklogrepository.save(sprint);
     }
+
+    */
 
 }
 

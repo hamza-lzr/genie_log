@@ -109,6 +109,7 @@ public class SprintBacklogController {
     }
 
     // Mise à jour de l'état d'une User Story dans un Sprint
+    /*
     @PutMapping("/{sprintId}/userstories/{userStoryId}/status")
     public ResponseEntity<SprintBacklog> updateUserStoryStatus(@PathVariable Long sprintId,
                                                                @PathVariable Long userStoryId,
@@ -120,4 +121,6 @@ public class SprintBacklogController {
             return ResponseEntity.notFound().build();
         }
     }
+
+     */
 }
