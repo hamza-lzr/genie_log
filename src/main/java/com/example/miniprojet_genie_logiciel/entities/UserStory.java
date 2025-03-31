@@ -24,7 +24,7 @@ public class UserStory {
     private String action;
 
     @Column
-    String value;
+    private String value;
 
     @Column
     private String priority;
