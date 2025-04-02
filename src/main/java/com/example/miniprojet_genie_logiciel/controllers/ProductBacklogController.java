@@ -45,12 +45,7 @@ public class ProductBacklogController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductBacklog> update(@PathVariable Long id,
                                                  @RequestBody ProductBacklog productBacklog) {
-        // Vérification de l'existence du backlog
-        if (!productBacklogService.findById(id).isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        productBacklog.setId(id);
-        ProductBacklog updated = productBacklogService.updateProductBacklog(productBacklog);
+        ProductBacklog updated = productBacklogService.updateProductBacklog(productBacklog, id);
         return ResponseEntity.ok(updated);
     }
 
@@ -66,11 +61,11 @@ public class ProductBacklogController {
     }
 
     // Ajouter un Epic à un ProductBacklog
-    @PostMapping("/{backlogId}/epics")
+    @PostMapping("/{backlogId}/link-epic/{epicId}")
     public ResponseEntity<ProductBacklog> addEpic(@PathVariable Long backlogId,
-                                                  @RequestBody Epic epic) {
+                                                  @PathVariable Long epicId) {
         try {
-            ProductBacklog updated = productBacklogService.addEpicToProductBacklog(backlogId, epic);
+            ProductBacklog updated = productBacklogService.addEpicToProductBacklog(backlogId, epicId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -78,11 +73,11 @@ public class ProductBacklogController {
     }
 
     // Supprimer un Epic d'un ProductBacklog
-    @DeleteMapping("/{backlogId}/epics")
+    @DeleteMapping("/{backlogId}/unlink-epic/{epicId}")
     public ResponseEntity<ProductBacklog> removeEpic(@PathVariable Long backlogId,
-                                                     @RequestBody Epic epic) {
+                                                     @PathVariable Long epicId) {
         try {
-            ProductBacklog updated = productBacklogService.removeEpicFromProductBacklog(backlogId, epic);
+            ProductBacklog updated = productBacklogService.removeEpicFromProductBacklog(backlogId, epicId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -90,11 +85,11 @@ public class ProductBacklogController {
     }
 
     // Ajouter une UserStory à un ProductBacklog
-    @PostMapping("/{backlogId}/userstories")
+    @PostMapping("/{backlogId}/link-us/{usId}")
     public ResponseEntity<ProductBacklog> addUserStory(@PathVariable Long backlogId,
-                                                       @RequestBody UserStory userStory) {
+                                                       @PathVariable Long usId) {
         try {
-            ProductBacklog updated = productBacklogService.addUserStoryToProductBacklog(backlogId, userStory);
+            ProductBacklog updated = productBacklogService.addUserStoryToProductBacklog(backlogId, usId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -102,11 +97,11 @@ public class ProductBacklogController {
     }
 
     // Supprimer une UserStory d'un ProductBacklog
-    @DeleteMapping("/{backlogId}/userstories")
+    @DeleteMapping("/{backlogId}/userstories/{usId}")
     public ResponseEntity<ProductBacklog> removeUserStory(@PathVariable Long backlogId,
-                                                          @RequestBody UserStory userStory) {
+                                                          @PathVariable Long usId) {
         try {
-            ProductBacklog updated = productBacklogService.removeUserStoryFromProductBacklog(backlogId, userStory);
+            ProductBacklog updated = productBacklogService.removeUserStoryFromProductBacklog(backlogId, usId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();

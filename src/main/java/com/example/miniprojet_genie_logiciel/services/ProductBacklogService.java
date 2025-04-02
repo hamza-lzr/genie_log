@@ -3,7 +3,9 @@ package com.example.miniprojet_genie_logiciel.services;
 import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
 import com.example.miniprojet_genie_logiciel.entities.Epic;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
+import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 public class ProductBacklogService {
 
     private final ProductBacklogRepository productbacklogrepository;
+    private final EpicRepository epicRepository;
+    private final UserStoryRepository userStoryRepository;
 
     // CRUD de base
     public ProductBacklog saveProductBacklog(ProductBacklog productbacklog) {
@@ -37,69 +41,67 @@ public class ProductBacklogService {
     }
 
     // Mise à jour d'un ProductBacklog existant
-    public ProductBacklog updateProductBacklog(ProductBacklog productbacklog) {
-        // Si l'id est présent, save() effectue bien une mise à jour
-        return productbacklogrepository.save(productbacklog);
+    public ProductBacklog updateProductBacklog(ProductBacklog Oldproductbacklog, Long backlogId) {
+        Optional<ProductBacklog> PBToUpdate = productbacklogrepository.findById(backlogId);
+        if (PBToUpdate.isPresent()) {
+            ProductBacklog PBToUpdateObj = PBToUpdate.get();
+            PBToUpdateObj.setName(Oldproductbacklog.getName());
+
+        }
+
+        return productbacklogrepository.save(Oldproductbacklog);
     }
 
     // Ajout d'un Epic au ProductBacklog
-    public ProductBacklog addEpicToProductBacklog(Long backlogId, Epic epic) {
+    public ProductBacklog addEpicToProductBacklog(Long backlogId, Long epicId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
-        pb.getEpics().add(epic);
+        Epic ep = epicRepository.findById(epicId)
+                        .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
+
+        pb.getEpics().add(ep);
+
         return productbacklogrepository.save(pb);
     }
 
     // Suppression d'un Epic du ProductBacklog
-    public ProductBacklog removeEpicFromProductBacklog(Long backlogId, Epic epic) {
+    public ProductBacklog removeEpicFromProductBacklog(Long backlogId, Long epicId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
-        pb.getEpics().remove(epic);
+        Epic ep = epicRepository.findById(epicId)
+                .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
+        pb.getEpics().remove(ep);
         return productbacklogrepository.save(pb);
     }
 
     // Ajout d'une UserStory au ProductBacklog
-    public ProductBacklog addUserStoryToProductBacklog(Long backlogId, UserStory userStory) {
+    public ProductBacklog addUserStoryToProductBacklog(Long backlogId, Long userStoryId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
-        pb.getUserStories().add(userStory);
+        UserStory us = userStoryRepository.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException(" User Story not found with id: "+ userStoryId));
+        pb.getUserStories().add(us);
         return productbacklogrepository.save(pb);
     }
 
     // Suppression d'une UserStory du ProductBacklog
-    public ProductBacklog removeUserStoryFromProductBacklog(Long backlogId, UserStory userStory) {
+    public ProductBacklog removeUserStoryFromProductBacklog(Long backlogId, Long userStoryId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
-        pb.getUserStories().remove(userStory);
+        UserStory us = userStoryRepository.findById(userStoryId)
+                        .orElseThrow(() -> new EntityNotFoundException(" User Story not found with id: "+ userStoryId));
+        pb.getUserStories().remove(us);
         return productbacklogrepository.save(pb);
     }
 
-    //priorisation des userstories
-   /* public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
+    public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
+
         return pb.getUserStories().stream()
-                .sorted(Comparator.comparingInt(us -> moscowValue(us.getPriority())))
+                .sorted(Comparator.comparingInt((UserStory us) -> us.getPriority().getWeight()).reversed())
                 .collect(Collectors.toList());
     }
 
-    private int moscowValue(String priority) {
-        if (priority == null) {
-            return Integer.MAX_VALUE;
-        }
-        switch (priority.toLowerCase()) {
-            case "must have":
-                return 1;
-            case "should have":
-                return 2;
-            case "could have":
-                return 3;
-            case "won't have":
-                return 4;
-            default:
-                return Integer.MAX_VALUE;
-        }
-    }
 
-*/
 }
