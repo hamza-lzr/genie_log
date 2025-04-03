@@ -1,5 +1,6 @@
 package com.example.miniprojet_genie_logiciel.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -30,24 +31,25 @@ public class UserStory {
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @JsonIgnore
     @ManyToOne
     private Epic epic;
 
+    @JsonIgnore
     @ManyToOne
     private ProductBacklog productBacklog;
 
+    @JsonIgnore
     @ManyToOne
     private SprintBacklog sprintBacklog;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "userStory")
     private List<Task> tasks;
 
     @Column
     @Enumerated(EnumType.STRING) // Stocke "Must Have", "Should Have", etc. en base
     private Priority priority;
-
-    @Column
-    private int priorityOrder;
 
     @Column
     private String acceptanceCriteria;

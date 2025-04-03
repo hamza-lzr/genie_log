@@ -40,7 +40,6 @@ public class ProductBacklogService {
         productbacklogrepository.deleteById(id);
     }
 
-    // Mise à jour d'un ProductBacklog existant
     public ProductBacklog updateProductBacklog(ProductBacklog Oldproductbacklog, Long backlogId) {
         Optional<ProductBacklog> PBToUpdate = productbacklogrepository.findById(backlogId);
         if (PBToUpdate.isPresent()) {
@@ -93,7 +92,7 @@ public class ProductBacklogService {
         pb.getUserStories().remove(us);
         return productbacklogrepository.save(pb);
     }
-
+    //classer les User Stories par ordre de priorite
     public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
@@ -102,6 +101,8 @@ public class ProductBacklogService {
                 .sorted(Comparator.comparingInt((UserStory us) -> us.getPriority().getWeight()).reversed())
                 .collect(Collectors.toList());
     }
+
+    //TO DO: GET EPICS LINKED TO THIS PRODUCT BACKLOG
 
 
 }

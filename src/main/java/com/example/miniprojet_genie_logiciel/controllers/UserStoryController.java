@@ -65,11 +65,7 @@ public class UserStoryController {
         return ResponseEntity.ok(userStoryService.updateUserStoryStatus(id, status));
     }
 
-    @PostMapping("/product-backlogs/{backlogId}/prioritize")
-    public ResponseEntity<Void> prioritizeUserStories(@PathVariable Long backlogId) {
-        userStoryService.prioritizeUserStories(backlogId);
-        return ResponseEntity.noContent().build();
-    }
+
 
     @GetMapping("/product-backlogs/{backlogId}/prioritized")
     public ResponseEntity<List<UserStory>> getPrioritizedStories(@PathVariable Long backlogId) {

@@ -66,20 +66,7 @@ public class UserStoryService {
         return userStoryRepository.save(userStory);
     }
 
-    // ==== Prioritization ====
-    public void prioritizeUserStories(Long backlogId) {
-        ProductBacklog backlog = productBacklogRepository.findById(backlogId)
-                .orElseThrow(() -> new EntityNotFoundException("Product Backlog non trouvé"));
 
-        List<UserStory> sorted = backlog.getUserStories().stream()
-                .sorted((us1, us2) -> Integer.compare(
-                        us2.getPriority().getWeight(),
-                        us1.getPriority().getWeight()
-                ))
-                .toList();
-
-        persistPriorityOrder(sorted);
-    }
 
     public List<UserStory> getPrioritizedUserStories(Long backlogId) {
         return productBacklogRepository.findById(backlogId)
@@ -126,11 +113,5 @@ public class UserStoryService {
         target.setAcceptanceCriteria(source.getAcceptanceCriteria());
     }
 
-    private void persistPriorityOrder(List<UserStory> sortedStories) {
-        int order = 1;
-        for (UserStory us : sortedStories) {
-            us.setPriorityOrder(order++);
-            userStoryRepository.save(us);
-        }
-    }
+
 }

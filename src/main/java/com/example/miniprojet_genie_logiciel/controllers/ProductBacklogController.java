@@ -97,7 +97,7 @@ public class ProductBacklogController {
     }
 
     // Supprimer une UserStory d'un ProductBacklog
-    @DeleteMapping("/{backlogId}/userstories/{usId}")
+    @DeleteMapping("/{backlogId}/unlink-us/{usId}")
     public ResponseEntity<ProductBacklog> removeUserStory(@PathVariable Long backlogId,
                                                           @PathVariable Long usId) {
         try {
@@ -107,11 +107,12 @@ public class ProductBacklogController {
             return ResponseEntity.notFound().build();
         }
     }
-/*
+
     // Récupérer les UserStories triées par priorité (méthode MoSCoW)
     @GetMapping("/{backlogId}/userstories/prioritized")
     public ResponseEntity<List<UserStory>> getPrioritizedUserStories(@PathVariable Long backlogId) {
         try {
+
             List<UserStory> prioritized = productBacklogService.prioritizeUserStoriesMoscow(backlogId);
             return ResponseEntity.ok(prioritized);
         } catch (EntityNotFoundException e) {
@@ -119,5 +120,5 @@ public class ProductBacklogController {
         }
     }
 
- */
+
 }
