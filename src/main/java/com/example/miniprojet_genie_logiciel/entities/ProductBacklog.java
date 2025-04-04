@@ -18,6 +18,9 @@ public class ProductBacklog {
     @Column
     private String name;
 
+    @OneToOne
+    private Project project;
+
     @JsonIgnore
     @OneToMany
     private List<Epic> epics;

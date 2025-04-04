@@ -23,7 +23,6 @@ public class ProductBacklogService {
     private final EpicRepository epicRepository;
     private final UserStoryRepository userStoryRepository;
 
-    // CRUD de base
     public ProductBacklog saveProductBacklog(ProductBacklog productbacklog) {
         return productbacklogrepository.save(productbacklog);
     }

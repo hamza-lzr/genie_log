@@ -1,5 +1,6 @@
 package com.example.miniprojet_genie_logiciel.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,7 +20,8 @@ public class Project {
     private Date startDate;
     private Date endDate;
 
-    @OneToOne
+    @JsonIgnore
+    @OneToOne(fetch = FetchType.EAGER)
     private ProductBacklog productBacklog;
 
 }
