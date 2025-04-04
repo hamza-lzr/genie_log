@@ -1,8 +1,6 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
-import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
-import com.example.miniprojet_genie_logiciel.entities.Epic;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.services.ProductBacklogService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/product-backlogs")
+@RequestMapping("/api/product-backlog")
 @RequiredArgsConstructor
 public class ProductBacklogController {
 
@@ -109,7 +107,7 @@ public class ProductBacklogController {
     }
 
     // Récupérer les UserStories triées par priorité (méthode MoSCoW)
-    @GetMapping("/{backlogId}/userstories/prioritized")
+    @GetMapping("/{backlogId}/user-stories/prioritized")
     public ResponseEntity<List<UserStory>> getPrioritizedUserStories(@PathVariable Long backlogId) {
         try {
 
@@ -118,6 +116,17 @@ public class ProductBacklogController {
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/{backlogId}/user-stories/filter")
+    public ResponseEntity<List<UserStory>> filterUserStories(
+            @PathVariable Long backlogId,
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) String keyword) {
+
+        List<UserStory> result = productBacklogService.filterUserStories(backlogId, status, priority, keyword);
+        return ResponseEntity.ok(result);
     }
 
 

@@ -78,4 +78,15 @@ public class UserStoryController {
         userStoryService.deleteUserStory(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("{id}/status")
+    public ResponseEntity<UserStory> updateUserStoryStatus(@PathVariable Long id, @RequestParam Status status) {
+        return ResponseEntity.ok(userStoryService.updateUserStoryStatus(id, status));
+    }
+
+    @PutMapping("/{id}/priority")
+    public ResponseEntity<UserStory> updateUserStoryPriority(@PathVariable Long id, @RequestParam Priority priority) {
+        return ResponseEntity.ok(userStoryService.updateUserStoryPriority(id, priority));
+
+    }
 }

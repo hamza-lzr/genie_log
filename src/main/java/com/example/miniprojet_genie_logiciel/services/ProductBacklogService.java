@@ -1,8 +1,6 @@
 package com.example.miniprojet_genie_logiciel.services;
 
-import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
-import com.example.miniprojet_genie_logiciel.entities.Epic;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
@@ -82,6 +80,7 @@ public class ProductBacklogService {
         return productbacklogrepository.save(pb);
     }
 
+
     // Suppression d'une UserStory du ProductBacklog
     public ProductBacklog removeUserStoryFromProductBacklog(Long backlogId, Long userStoryId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
@@ -101,7 +100,28 @@ public class ProductBacklogService {
                 .collect(Collectors.toList());
     }
 
-    //TO DO: GET EPICS LINKED TO THIS PRODUCT BACKLOG
+    public List<UserStory> filterUserStories(Long backlogId,
+                                             Status statusFilter,
+                                             Priority priorityFilter,
+                                             String keyword) {
+        ProductBacklog pb = productbacklogrepository.findById(backlogId)
+                .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
+
+        return pb.getUserStories().stream()
+                .filter(us -> statusFilter == null || us.getStatus() == statusFilter)
+                .filter(us -> priorityFilter == null || us.getPriority() == priorityFilter)
+                .filter(us -> keyword == null || keyword.isBlank()
+                        || us.getTitle().toLowerCase().contains(keyword.toLowerCase())
+                        || us.getAcceptanceCriteria().toLowerCase().contains(keyword.toLowerCase())
+                        || us.getAction().toLowerCase().contains(keyword.toLowerCase())
+                        || us.getRole().toLowerCase().contains(keyword.toLowerCase())
+                        || us.getGoal().toLowerCase().contains(keyword.toLowerCase())
+                )
+                .collect(Collectors.toList());
+    }
+
+
+
 
 
 }

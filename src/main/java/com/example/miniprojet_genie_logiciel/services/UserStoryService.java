@@ -9,13 +9,13 @@ import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,16 +27,27 @@ public class UserStoryService {
     private final ProductBacklogRepository productBacklogRepository;
 
     // ==== CRUD Operations ====
-    public UserStory addUserStory(@Valid UserStory userStory) {
-        validateUserStory(userStory);
+    public UserStory addUserStory( UserStory userStory) {
         return userStoryRepository.save(userStory);
     }
 
-    public UserStory updateUserStory(Long id, @Valid UserStory updatedStory) {
+    public UserStory updateUserStory(Long id, UserStory updatedStory) {
+        UserStory existing = getUserStoryById(id);
+        existing.setTitle(updatedStory.getTitle());
+        existing.setAction(updatedStory.getAction());
+        existing.setRole(updatedStory.getRole());
+        existing.setGoal(updatedStory.getGoal());
+        return userStoryRepository.save(existing);
+
+    }
+
+
+    public UserStory updateUserStoryPriority(Long id, Priority priority) {
         UserStory existing = getUserStoryOrThrow(id);
-        updateFields(existing, updatedStory);
+        existing.setPriority(priority);
         return userStoryRepository.save(existing);
     }
+
 
     public void deleteUserStory(Long id) {
         if (!userStoryRepository.existsById(id)) {
@@ -47,11 +58,23 @@ public class UserStoryService {
 
     // ==== Business Logic ====
     public UserStory linkUserStoryToEpic(Long userStoryId, Long epicId) {
-        UserStory userStory = getUserStoryOrThrow(userStoryId);
+        UserStory userStory = userStoryRepository.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException("UserStory not found with id: " + userStoryId));
         Epic epic = epicRepository.findById(epicId)
-                .orElseThrow(() -> new EntityNotFoundException("Epic non trouvé avec l'ID : " + epicId));
+                .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
+
         userStory.setEpic(epic);
+
+        if (!epic.getUserStories().contains(userStory)) {
+            epic.getUserStories().add(userStory);
+        }
+
         return userStoryRepository.save(userStory);
+    }
+
+    public void unlinkUserStoryFromEpic(Long userStoryId, Long EpicId) {
+        UserStory userStory = getUserStoryOrThrow(userStoryId);
+
     }
 
     public UserStory setAcceptanceCriteria(Long userStoryId, String criteria) {
@@ -93,25 +116,5 @@ public class UserStoryService {
         return userStoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'ID : " + id));
     }
-
-    private void validateUserStory(UserStory userStory) {
-        if (userStory.getRole() == null || userStory.getRole().isBlank()) {
-            throw new IllegalArgumentException("Le champ 'role' est obligatoire");
-        }
-        if (userStory.getAction() == null || userStory.getAction().isBlank()) {
-            throw new IllegalArgumentException("Le champ 'action' est obligatoire");
-        }
-    }
-
-    private void updateFields(UserStory target, UserStory source) {
-        target.setTitle(source.getTitle());
-        target.setRole(source.getRole());
-        target.setAction(source.getAction());
-        target.setGoal(source.getGoal());
-        target.setPriority(source.getPriority());
-        target.setStatus(source.getStatus());
-        target.setAcceptanceCriteria(source.getAcceptanceCriteria());
-    }
-
 
 }

@@ -33,6 +33,7 @@ public class UserStory {
 
     @JsonIgnore
     @ManyToOne
+    @JoinColumn(name = "epic_id")
     private Epic epic;
 
     @JsonIgnore
