@@ -31,16 +31,14 @@ public class UserStory {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "epic_id")
     private Epic epic;
 
-    @JsonIgnore
     @ManyToOne
+    @JoinColumn(name="product_backlog_id")
     private ProductBacklog productBacklog;
 
-    @JsonIgnore
     @ManyToOne
     private SprintBacklog sprintBacklog;
 

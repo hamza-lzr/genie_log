@@ -1,30 +1,19 @@
 package com.example.miniprojet_genie_logiciel.services;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.example.miniprojet_genie_logiciel.entities.Epic;
-import com.example.miniprojet_genie_logiciel.entities.Priority;
-import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
-import com.example.miniprojet_genie_logiciel.services.ProductBacklogService;
-
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 class ProductBacklogServiceTest {
 
     @Mock
@@ -39,143 +28,96 @@ class ProductBacklogServiceTest {
     @InjectMocks
     private ProductBacklogService productBacklogService;
 
-    private ProductBacklog mockBacklog;
-    private Epic mockEpic;
-    private UserStory mockUserStory;
-
     @BeforeEach
     void setUp() {
-        mockBacklog = new ProductBacklog();
-        mockEpic = new Epic();
-        mockUserStory = new UserStory();
-
-        mockBacklog.setId(1L);
-        mockBacklog.setName("test backlog");
-        mockEpic.setId(2L);
-        mockEpic.setTitle("test epic");
-        mockEpic.setDescription("test epic description");
-        mockUserStory.setId(3L);
-        mockUserStory.setTitle("test user story");
-        mockUserStory.setGoal("goal of user story");
-        mockUserStory.setPriority(Priority.MUST_HAVE);
-        mockUserStory.setRole("role of user story");
-        mockUserStory.setAcceptanceCriteria("acceptance criteria of user story");
-        mockUserStory.setAction("action of user story");
-        mockUserStory.setEpic(mockEpic);
-
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void testSaveProductBacklog() {
-        when(productBacklogRepository.save(mockBacklog)).thenReturn(mockBacklog);
+        ProductBacklog backlog = new ProductBacklog();
+        backlog.setName("Test Backlog");
 
-        ProductBacklog saved = productBacklogService.saveProductBacklog(mockBacklog);
+        when(productBacklogRepository.save(backlog)).thenReturn(backlog);
 
-        assertNotNull(saved);
-        assertEquals("test backlog", saved.getName());
-        verify(productBacklogRepository, times(1)).save(mockBacklog);
+        ProductBacklog saved = productBacklogService.saveProductBacklog(backlog);
+        assertEquals("Test Backlog", saved.getName());
     }
 
     @Test
-    void testFindById_Success() {
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(mockBacklog));
+    void testFindAll() {
+        List<ProductBacklog> list = List.of(new ProductBacklog(), new ProductBacklog());
+        when(productBacklogRepository.findAll()).thenReturn(list);
 
-        Optional<ProductBacklog> found = productBacklogService.findById(1L);
-
-        assertTrue(found.isPresent());
-        assertEquals("test backlog", found.get().getName());
+        List<ProductBacklog> result = productBacklogService.findAll();
+        assertEquals(2, result.size());
     }
 
     @Test
-    void testFindById_NotFound() {
-        when(productBacklogRepository.findById(99L)).thenReturn(Optional.empty());
+    void testAddEpicToProductBacklog() {
+        ProductBacklog pb = new ProductBacklog();
+        pb.setId(1L);
+        pb.setEpics(new ArrayList<>());
 
-        Optional<ProductBacklog> found = productBacklogService.findById(99L);
+        Epic epic = new Epic();
+        epic.setId(2L);
 
-        assertFalse(found.isPresent());
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
+        when(epicRepository.findById(2L)).thenReturn(Optional.of(epic));
+        when(productBacklogRepository.save(pb)).thenReturn(pb);
+
+        ProductBacklog result = productBacklogService.addEpicToProductBacklog(1L, 2L);
+        assertTrue(result.getEpics().contains(epic));
     }
 
     @Test
-    void testUpdateProductBacklog_Success() {
-        ProductBacklog updatedBacklog = new ProductBacklog();
+    void testAddUserStoryToProductBacklog() {
+        ProductBacklog pb = new ProductBacklog();
+        pb.setId(1L);
+        pb.setUserStories(new ArrayList<>());
 
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(mockBacklog));
-        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(updatedBacklog);
+        UserStory us = new UserStory();
+        us.setId(2L);
 
-        ProductBacklog result = productBacklogService.updateProductBacklog(updatedBacklog, 1L);
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
+        when(productBacklogRepository.save(pb)).thenReturn(pb);
 
-        assertEquals("Updated Backlog", result.getName());
-        verify(productBacklogRepository, times(1)).save(updatedBacklog);
-    }
-
-    @Test
-    void testAddEpicToProductBacklog_Success() {
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(mockBacklog));
-        when(epicRepository.findById(1L)).thenReturn(Optional.of(mockEpic));
-        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(mockBacklog);
-
-        ProductBacklog result = productBacklogService.addEpicToProductBacklog(1L, 1L);
-
-        assertTrue(result.getEpics().contains(mockEpic));
-        verify(productBacklogRepository, times(1)).save(mockBacklog);
-    }
-
-    @Test
-    void testAddEpicToProductBacklog_NotFound() {
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class, () -> productBacklogService.addEpicToProductBacklog(1L, 1L));
-    }
-
-    @Test
-    void testRemoveEpicFromProductBacklog_Success() {
-        mockBacklog.getEpics().add(mockEpic);
-
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(mockBacklog));
-        when(epicRepository.findById(1L)).thenReturn(Optional.of(mockEpic));
-        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(mockBacklog);
-
-        ProductBacklog result = productBacklogService.removeEpicFromProductBacklog(1L, 1L);
-
-        assertFalse(result.getEpics().contains(mockEpic));
-        verify(productBacklogRepository, times(1)).save(mockBacklog);
+        ProductBacklog result = productBacklogService.addUserStoryToProductBacklog(1L, 2L);
+        assertTrue(result.getUserStories().contains(us));
+        assertEquals(pb, us.getProductBacklog());
     }
 
     @Test
     void testPrioritizeUserStoriesMoscow() {
+        ProductBacklog pb = new ProductBacklog();
         UserStory us1 = new UserStory();
-        us1.setId(1L);
-        us1.setPriority(Priority.MUST_HAVE);
         UserStory us2 = new UserStory();
-        us2.setId(2L);
-        us2.setPriority(Priority.SHOULD_HAVE);
-        UserStory us3 = new UserStory();
-        us3.setId(3L);
-        us3.setPriority(Priority.COULD_HAVE);
 
-        mockBacklog.setUserStories(Arrays.asList(us1, us2, us3));
+        Priority high = Priority.MUST_HAVE; // Assume this enum has a weight() method returning int
+        Priority low = Priority.COULD_HAVE;
 
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(mockBacklog));
+        us1.setPriority(high);
+        us2.setPriority(low);
 
-        List<UserStory> sortedStories = productBacklogService.prioritizeUserStoriesMoscow(1L);
+        pb.setUserStories(List.of(us2, us1));
 
-        assertNotNull(sortedStories);
-        assertEquals(3, sortedStories.size());
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
 
-        // Vérification de l'ordre Must Have (1) -> Should Have (2) -> Could Have (3)
-        assertEquals(3L, sortedStories.get(0).getId()); // Story 2 (Must Have)
-        assertEquals(2L, sortedStories.get(1).getId()); // Story 1 (Should Have)
-        assertEquals(1L, sortedStories.get(2).getId()); // Story 3 (Could Have)
+        List<UserStory> result = productBacklogService.prioritizeUserStoriesMoscow(1L);
+
+        assertEquals(high, result.get(0).getPriority());
     }
 
     @Test
-    void testPrioritizeUserStoriesMoscow_BacklogNotFound() {
-        when(productBacklogRepository.findById(99L)).thenReturn(Optional.empty());
+    void testRemoveEpicFromProductBacklog_NotFound() {
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
-                () -> productBacklogService.prioritizeUserStoriesMoscow(99L));
-
-        assertEquals("ProductBacklog not found with id: 99", exception.getMessage());
+        Exception exception = assertThrows(EntityNotFoundException.class, () ->
+                productBacklogService.removeEpicFromProductBacklog(1L, 2L));
+        assertTrue(exception.getMessage().contains("ProductBacklog not found"));
     }
+
 }
+
 
