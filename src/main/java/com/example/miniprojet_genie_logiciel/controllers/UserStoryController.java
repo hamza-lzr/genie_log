@@ -41,12 +41,20 @@ public class UserStoryController {
         return ResponseEntity.ok(userStoryService.updateUserStory(id, userStory));
     }
 
-    @PatchMapping("/{id}/epic")
+    @PostMapping("/link-epic/{usId}/{epId}")
     public ResponseEntity<UserStory> linkToEpic(
-            @PathVariable Long id,
-            @RequestParam Long epicId
+            @PathVariable Long usId,
+            @PathVariable Long epId
     ) {
-        return ResponseEntity.ok(userStoryService.linkUserStoryToEpic(id, epicId));
+        return ResponseEntity.ok(userStoryService.linkUserStoryToEpic(usId, epId));
+    }
+
+    @PostMapping("/unlink-epic/{usId}/{epId}")
+    public ResponseEntity<UserStory> unlinkToEpic(
+            @PathVariable Long usId,
+            @PathVariable Long epId
+    ){
+        return ResponseEntity.ok(userStoryService.unlinkUserStoryFromEpic(usId, epId));
     }
 
     @PatchMapping("/{id}/acceptance-criteria")

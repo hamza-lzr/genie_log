@@ -77,6 +77,7 @@ public class ProductBacklogService {
         UserStory us = userStoryRepository.findById(userStoryId)
                 .orElseThrow(() -> new EntityNotFoundException(" User Story not found with id: "+ userStoryId));
         pb.getUserStories().add(us);
+        us.setProductBacklog(pb);
         return productbacklogrepository.save(pb);
     }
 

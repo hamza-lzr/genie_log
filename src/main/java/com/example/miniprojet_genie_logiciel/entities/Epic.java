@@ -1,5 +1,6 @@
 package com.example.miniprojet_genie_logiciel.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,6 +17,7 @@ public class Epic {
     private String title;
     private String description;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "epic")
     private List<UserStory> userStories;
 }

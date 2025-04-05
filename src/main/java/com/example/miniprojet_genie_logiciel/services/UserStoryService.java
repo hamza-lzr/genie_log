@@ -72,9 +72,17 @@ public class UserStoryService {
         return userStoryRepository.save(userStory);
     }
 
-    public void unlinkUserStoryFromEpic(Long userStoryId, Long EpicId) {
-        UserStory userStory = getUserStoryOrThrow(userStoryId);
-
+    public UserStory unlinkUserStoryFromEpic(Long userStoryId, Long EpicId) {
+        Optional<UserStory> userStory = userStoryRepository.findById(userStoryId);
+        Optional<Epic> epic = epicRepository.findById(EpicId);
+        if (userStory.isPresent() && epic.isPresent()) {
+            UserStory us = userStory.get();
+            Epic ep = epic.get();
+            us.setEpic(null);
+            ep.getUserStories().remove(us);
+            return userStoryRepository.save(us);
+        }
+        else return null;
     }
 
     public UserStory setAcceptanceCriteria(Long userStoryId, String criteria) {

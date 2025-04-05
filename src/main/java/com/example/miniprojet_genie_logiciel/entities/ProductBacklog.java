@@ -26,6 +26,6 @@ public class ProductBacklog {
     private List<Epic> epics;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(mappedBy = "productBacklog")
     private List<UserStory> userStories;
 }
