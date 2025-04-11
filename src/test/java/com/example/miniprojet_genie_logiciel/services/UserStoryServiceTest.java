@@ -3,6 +3,7 @@ package com.example.miniprojet_genie_logiciel.services;
 import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
+import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,141 +25,175 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserStoryServiceTest {
 
-    @Mock
-    private UserStoryRepository userStoryRepository;
-
-    @Mock
-    private EpicRepository epicRepository;
-
-    @Mock
-    private ProductBacklogRepository productBacklogRepository;
-
     @InjectMocks
     private UserStoryService userStoryService;
 
+    @Mock private UserStoryRepository userStoryRepository;
+    @Mock private EpicRepository epicRepository;
+    @Mock private ProductBacklogRepository productBacklogRepository;
+    @Mock private TaskRepository taskRepository;
+
     private UserStory userStory;
-    private ProductBacklog backlog;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         userStory = new UserStory();
         userStory.setId(1L);
-        userStory.setTitle("User Story Test");
-        userStory.setRole("Développeur");
-        userStory.setAction("Créer un test");
-        userStory.setGoal("Vérifier le bon fonctionnement");
-        userStory.setPriority(Priority.MUST_HAVE);
-        userStory.setStatus(Status.TO_DO);
-
-        backlog = new ProductBacklog();
-        backlog.setId(1L);
-        backlog.setUserStories(List.of(userStory));
+        userStory.setTitle("Connexion");
+        userStory.setTasks(new ArrayList<>());
     }
 
-    // ✅ Test de l'ajout d'une User Story
     @Test
-    void testAddUserStory() {
-        when(userStoryRepository.save(any(UserStory.class))).thenReturn(userStory);
+    void shouldAddUserStory() {
+        when(userStoryRepository.save(userStory)).thenReturn(userStory);
 
         UserStory saved = userStoryService.addUserStory(userStory);
 
         assertNotNull(saved);
-        assertEquals("User Story Test", saved.getTitle());
-        verify(userStoryRepository, times(1)).save(any(UserStory.class));
+        assertEquals("Connexion", saved.getTitle());
+        verify(userStoryRepository, times(1)).save(userStory);
     }
 
-    // ✅ Test de mise à jour d'une User Story
     @Test
-    void testUpdateUserStory() {
+    void shouldUpdateUserStory() {
+        UserStory updated = new UserStory();
+        updated.setTitle("Inscription");
+        updated.setAction("faire");
+        updated.setGoal("tester");
+        updated.setRole("utilisateur");
+
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
-        when(userStoryRepository.save(any(UserStory.class))).thenReturn(userStory);
+        when(userStoryRepository.save(any())).thenReturn(userStory);
 
-        UserStory updatedStory = new UserStory();
-        updatedStory.setTitle("Updated Story");
-        updatedStory.setRole("PO");
-        updatedStory.setAction("Modifier une US");
-        updatedStory.setGoal("Mise à jour correcte");
-        updatedStory.setPriority(Priority.SHOULD_HAVE);
-        updatedStory.setStatus(Status.IN_PROGRESS);
+        UserStory result = userStoryService.updateUserStory(1L, updated);
 
-        UserStory result = userStoryService.updateUserStory(1L, updatedStory);
-
-        assertEquals("Updated Story", result.getTitle());
-        assertEquals("PO", result.getRole());
-        verify(userStoryRepository, times(1)).save(any(UserStory.class));
+        assertEquals("Inscription", result.getTitle());
+        verify(userStoryRepository).save(userStory);
     }
 
-    // ✅ Test de suppression d'une User Story
     @Test
-    void testDeleteUserStory() {
+    void shouldUpdatePriority() {
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        userStory.setPriority(Priority.MUST_HAVE);
+        when(userStoryRepository.save(any())).thenReturn(userStory); // <- AJOUTÉ
+
+
+        UserStory result = userStoryService.updateUserStoryPriority(1L, Priority.MUST_HAVE);
+
+        assertEquals(Priority.MUST_HAVE, result.getPriority());
+    }
+
+    @Test
+    void shouldDeleteUserStory() {
         when(userStoryRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(userStoryRepository).deleteById(1L);
 
-        assertDoesNotThrow(() -> userStoryService.deleteUserStory(1L));
-        verify(userStoryRepository, times(1)).deleteById(1L);
+        userStoryService.deleteUserStory(1L);
+
+        verify(userStoryRepository).deleteById(1L);
     }
 
-    // ❌ Test de suppression d'une User Story inexistante
     @Test
-    void testDeleteUserStory_NotFound() {
-        when(userStoryRepository.existsById(1L)).thenReturn(false);
+    void shouldThrowWhenDeletingNonExistentStory() {
+        when(userStoryRepository.existsById(99L)).thenReturn(false);
 
-        Exception exception = assertThrows(EntityNotFoundException.class, () -> userStoryService.deleteUserStory(1L));
-        assertEquals("User Story non trouvée avec l'ID : 1", exception.getMessage());
+        assertThrows(EntityNotFoundException.class, () ->
+                userStoryService.deleteUserStory(99L));
     }
 
-    // ✅ Test de priorisation des User Stories
-  /*  @Test
-    void testPrioritizeUserStories() {
-        UserStory us1 = new UserStory();
-        us1.setPriority(Priority.MUST_HAVE);
-
-        UserStory us2 = new UserStory();
-        us2.setPriority(Priority.SHOULD_HAVE);
-
-        ProductBacklog backlog = new ProductBacklog();
-        backlog.setId(1L);
-        backlog.setUserStories(Arrays.asList(us2, us1)); // Mauvais ordre initial
-
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(backlog));
-
-        userStoryService.prioritizeUserStories(1L);
-
-        // Vérification que l'ordre est maintenant correct
-        assertEquals(Priority.SHOULD_HAVE, backlog.getUserStories().get(1).getPriority());
-    }
-
-   */
-
-    // ✅ Test de récupération d'une User Story par ID
     @Test
-    void testGetUserStoryById() {
+    void shouldLinkUserStoryToEpic() {
+        Epic epic = new Epic();
+        epic.setId(2L);
+        epic.setUserStories(new ArrayList<>());
+
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(epicRepository.findById(2L)).thenReturn(Optional.of(epic));
+        when(userStoryRepository.save(userStory)).thenReturn(userStory);
+
+        UserStory result = userStoryService.linkUserStoryToEpic(1L, 2L);
+
+        assertEquals(epic, result.getEpic());
+        assertTrue(epic.getUserStories().contains(userStory));
+    }
+
+    @Test
+    void shouldSetAcceptanceCriteria() {
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(userStoryRepository.save(any())).thenReturn(userStory); // <- AJOUTÉ
+
+
+        UserStory updated = userStoryService.setAcceptanceCriteria(1L, "Doit fonctionner sans erreur");
+
+        assertEquals("Doit fonctionner sans erreur", updated.getAcceptanceCriteria());
+    }
+
+    @Test
+    void shouldUpdateStatus() {
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(userStoryRepository.save(any())).thenReturn(userStory);
+
+
+        UserStory updated = userStoryService.updateUserStoryStatus(1L, Status.IN_PROGRESS);
+
+        assertEquals(Status.IN_PROGRESS, updated.getStatus());
+    }
+
+    @Test
+    void shouldAddTaskToUserStory() {
+        Task task = new Task();
+        task.setTitle("Faire test unitaire");
+
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
 
-        UserStory found = userStoryService.getUserStoryById(1L);
+        Task added = userStoryService.addTaskToUserStory(1L, task);
 
-        assertNotNull(found);
-        assertEquals(1L, found.getId());
+        assertEquals("Faire test unitaire", added.getTitle());
+        assertTrue(userStory.getTasks().contains(task));
     }
 
-    // ❌ Test de récupération d'une User Story inexistante
     @Test
-    void testGetUserStoryById_NotFound() {
-        when(userStoryRepository.findById(1L)).thenReturn(Optional.empty());
+    void shouldDeleteTaskFromUserStory() {
+        Task task = new Task();
+        task.setId(10L);
+        task.setTitle("Tâche à supprimer");
 
-        Exception exception = assertThrows(EntityNotFoundException.class, () -> userStoryService.getUserStoryById(1L));
-        assertEquals("User Story non trouvée avec l'ID : 1", exception.getMessage());
+        userStory.getTasks().add(task);
+
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+
+        userStoryService.deleteTaskFromUserStory(1L, 10L);
+
+        assertFalse(userStory.getTasks().contains(task));
+        verify(taskRepository).delete(task);
     }
 
-    // ✅ Test de récupération de toutes les User Stories
     @Test
-    void testGetAllUserStories() {
-        when(userStoryRepository.findAll()).thenReturn(List.of(userStory));
+    void shouldUpdateTaskStatus() {
+        Task task = new Task();
+        task.setId(10L);
+        task.setStatus("To Do");
 
-        List<UserStory> stories = userStoryService.getAllUserStories();
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(task)).thenReturn(task);
 
-        assertFalse(stories.isEmpty());
-        assertEquals(1, stories.size());
+        Task updated = userStoryService.updateTaskStatus(10L, "Done");
+
+        assertEquals("Done", updated.getStatus());
+    }
+
+    @Test
+    void shouldGetTasksForUserStory() {
+        Task task = new Task();
+        task.setTitle("Implémenter DAO");
+        userStory.getTasks().add(task);
+
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+
+        List<Task> tasks = userStoryService.getTasksForUserStory(1L);
+
+        assertEquals(1, tasks.size());
+        assertEquals("Implémenter DAO", tasks.get(0).getTitle());
     }
 }
 

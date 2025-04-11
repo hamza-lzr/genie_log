@@ -1,12 +1,9 @@
 package com.example.miniprojet_genie_logiciel.services;
 
-import com.example.miniprojet_genie_logiciel.entities.Epic;
-import com.example.miniprojet_genie_logiciel.entities.Priority;
-import com.example.miniprojet_genie_logiciel.entities.Status;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
-import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
+import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
+import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +22,8 @@ public class UserStoryService {
     private final UserStoryRepository userStoryRepository;
     private final EpicRepository epicRepository;
     private final ProductBacklogRepository productBacklogRepository;
+    private final TaskRepository taskRepository;
+
 
     // ==== CRUD Operations ====
     public UserStory addUserStory( UserStory userStory) {
@@ -123,6 +122,39 @@ public class UserStoryService {
     private UserStory getUserStoryOrThrow(Long id) {
         return userStoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'ID : " + id));
+    }
+
+    public Task addTaskToUserStory(Long userStoryId, Task task) {
+        UserStory userStory = getUserStoryOrThrow(userStoryId);
+        task.setUserStory(userStory);
+        userStory.getTasks().add(task);
+        userStoryRepository.save(userStory); // persist cascade
+        return task;
+    }
+
+    public void deleteTaskFromUserStory(Long userStoryId, Long taskId) {
+        UserStory userStory = getUserStoryOrThrow(userStoryId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task non trouvée avec l'ID : " + taskId));
+
+        if (!userStory.getTasks().contains(task)) {
+            throw new IllegalArgumentException("Cette tâche n'appartient pas à la User Story spécifiée.");
+        }
+
+        userStory.getTasks().remove(task);
+        taskRepository.delete(task); // suppression explicite
+    }
+
+    public Task updateTaskStatus(Long taskId, String newStatus) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task non trouvée avec l'ID : " + taskId));
+        task.setStatus(newStatus);
+        return taskRepository.save(task);
+    }
+
+    public List<Task> getTasksForUserStory(Long userStoryId) {
+        UserStory userStory = getUserStoryOrThrow(userStoryId);
+        return userStory.getTasks();
     }
 
 }

@@ -4,95 +4,84 @@ import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
 import com.example.miniprojet_genie_logiciel.entities.Task;
 import com.example.miniprojet_genie_logiciel.repository.SprintBacklogRepository;
+import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class SprintBacklogService {
 
-    private final SprintBacklogRepository sprintbacklogrepository;
+    private final SprintBacklogRepository sprintBacklogRepository;
+    private final UserStoryRepository userStoryRepository;
 
-    // Méthodes CRUD de base
-    public SprintBacklog saveSprintBacklog(SprintBacklog sprintbacklog) {
-        return sprintbacklogrepository.save(sprintbacklog);
-    }
-
-    public List<SprintBacklog> findAll() {
-        return sprintbacklogrepository.findAll();
-    }
-
-    public Optional<SprintBacklog> findById(Long id) {
-        return sprintbacklogrepository.findById(id);
-    }
-
-    public void deleteById(Long id) {
-        sprintbacklogrepository.deleteById(id);
-    }
-
-    // Création d'un nouveau Sprint (Sprint 1, Sprint 2, etc.)
+    // Créer un nouveau sprint vide
     public SprintBacklog createSprint(String name) {
         SprintBacklog sprint = new SprintBacklog();
         sprint.setName(name);
-        sprint.setUserStories(new ArrayList<>());
-        sprint.setTasks(new ArrayList<>());
-        return sprintbacklogrepository.save(sprint);
+        sprint.setUserStories(List.of()); // initialise à liste vide
+        return sprintBacklogRepository.save(sprint);
     }
 
-    // Sélection et ajout d'une User Story depuis le Product Backlog dans le Sprint Backlog
-    public SprintBacklog addUserStoryToSprint(Long sprintId, UserStory userStory) {
-        SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
+    // Ajouter une User Story à un sprint
+    public String addUserStoryToSprint(Long sprintId, Long userStoryId) {
+        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
+        UserStory userStory = userStoryRepository.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'id : " + userStoryId));
+
+        // Optionnel : empêcher l’ajout si déjà assignée
+        if (userStory.getSprintBacklog() != null) {
+            throw new IllegalStateException("La User Story est déjà assignée à un sprint.");
+        }
+
+        // Lier et sauvegarder
+        userStory.setSprintBacklog(sprint);
         sprint.getUserStories().add(userStory);
-        return sprintbacklogrepository.save(sprint);
+
+        return "User Story [id=" + userStory.getId() + "] ajoutée au Sprint '" + sprint.getName() + "' [id=" + sprint.getId() + "]";
     }
 
-    // Suppression d'une User Story du Sprint Backlog
-    public SprintBacklog removeUserStoryFromSprint(Long sprintId, UserStory userStory) {
-        SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
+    // Retirer une User Story d'un Sprint
+    public void removeUserStoryFromSprint(Long sprintId, Long userStoryId) {
+        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
+        UserStory userStory = userStoryRepository.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'id : " + userStoryId));
+
+        if (!sprint.getUserStories().contains(userStory)) {
+            throw new IllegalArgumentException("La User Story n'est pas présente dans ce sprint.");
+        }
+
         sprint.getUserStories().remove(userStory);
-        return sprintbacklogrepository.save(sprint);
+        userStory.setSprintBacklog(null); // désassigner
     }
 
-    // Ajout d'une Task au Sprint Backlog (liée à une User Story)
-    public SprintBacklog addTaskToSprint(Long sprintId, Task task) {
-        SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
-        sprint.getTasks().add(task);
-        return sprintbacklogrepository.save(sprint);
+    // Récupérer tous les sprints
+    public List<SprintBacklog> findAllSprints() {
+        return sprintBacklogRepository.findAll();
     }
 
-    // Mise à jour de l'état d'une Task dans le Sprint Backlog
-    public SprintBacklog updateTaskStatus(Long sprintId, Long taskId, String newStatus) {
-        SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
-        sprint.getTasks().forEach(task -> {
-            if (task.getId().equals(taskId)) {
-                task.setStatus(newStatus);
-            }
-        });
-        return sprintbacklogrepository.save(sprint);
+    // Récupérer un sprint par ID
+    public SprintBacklog findSprintById(Long sprintId) {
+        return sprintBacklogRepository.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
     }
 
-   /* // Suivi et mise à jour de l'état d'une User Story dans le Sprint Backlog
-    public SprintBacklog updateUserStoryStatus(Long sprintId, Long userStoryId, String newStatus) {
-        SprintBacklog sprint = sprintbacklogrepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
-        sprint.getUserStories().forEach(us -> {
-            if (us.getId().equals(userStoryId)) {
-                us.setStatus(newStatus);
-            }
-        });
-        return sprintbacklogrepository.save(sprint);
+    // Supprimer un sprint par ID
+    public void deleteSprintById(Long sprintId) {
+        if (!sprintBacklogRepository.existsById(sprintId)) {
+            throw new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId);
+        }
+        sprintBacklogRepository.deleteById(sprintId);
     }
-
-    */
 
 }
 

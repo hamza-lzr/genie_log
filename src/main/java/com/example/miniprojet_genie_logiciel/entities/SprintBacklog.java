@@ -18,9 +18,7 @@ public class SprintBacklog {
     @Column
     private String name;
 
-    @OneToMany
+    @OneToMany(mappedBy = "sprintBacklog", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserStory> userStories;
 
-    @OneToMany
-    private List<Task> tasks;
 }

@@ -39,12 +39,14 @@ public class UserStory {
     @JoinColumn(name="product_backlog_id")
     private ProductBacklog productBacklog;
 
-    @ManyToOne
+    @ManyToOne //dois je ajouter un mapped by ?
+    @JoinColumn(name = "sprintBacklog_id")
     private SprintBacklog sprintBacklog;
 
+    @OneToMany(mappedBy = "userStory", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    @OneToMany(mappedBy = "userStory")
     private List<Task> tasks;
+
 
     @Column
     @Enumerated(EnumType.STRING) // Stocke "Must Have", "Should Have", etc. en base

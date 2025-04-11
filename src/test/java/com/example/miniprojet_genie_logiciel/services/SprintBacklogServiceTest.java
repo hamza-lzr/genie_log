@@ -4,12 +4,14 @@ import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
 import com.example.miniprojet_genie_logiciel.entities.Task;
 import com.example.miniprojet_genie_logiciel.repository.SprintBacklogRepository;
+import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -23,139 +25,137 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SprintBacklogServiceTest {
 
-    @Mock
-    private SprintBacklogRepository sprintBacklogRepository;
-
     @InjectMocks
     private SprintBacklogService sprintBacklogService;
 
-    private SprintBacklog sprintBacklog;
-    private UserStory userStory;
-    private Task task;
+    @Mock
+    private SprintBacklogRepository sprintBacklogRepository;
 
-    @BeforeEach
-    void setUp() {
-        sprintBacklog = new SprintBacklog();
-        sprintBacklog.setId(1L);
-        sprintBacklog.setName("Sprint 1");
-        sprintBacklog.setUserStories(new ArrayList<>());
-        sprintBacklog.setTasks(new ArrayList<>());
-
-        userStory = new UserStory();
-        userStory.setId(1L);
-        userStory.setTitle("Test User Story");
-
-        task = new Task();
-        task.setId(1L);
-        task.setTitle("Test Task");
-        task.setStatus("TO_DO");
-    }
+    @Mock
+    private UserStoryRepository userStoryRepository;
 
     @Test
-    void testSaveSprintBacklog() {
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+    void shouldCreateSprint() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setName("Sprint 1");
+        sprint.setUserStories(new ArrayList<>());
 
-        SprintBacklog saved = sprintBacklogService.saveSprintBacklog(sprintBacklog);
-
-        assertNotNull(saved);
-        assertEquals("Sprint 1", saved.getName());
-        verify(sprintBacklogRepository, times(1)).save(any(SprintBacklog.class));
-    }
-
-    @Test
-    void testFindAll() {
-        when(sprintBacklogRepository.findAll()).thenReturn(List.of(sprintBacklog));
-
-        List<SprintBacklog> sprints = sprintBacklogService.findAll();
-
-        assertFalse(sprints.isEmpty());
-        assertEquals(1, sprints.size());
-        assertEquals("Sprint 1", sprints.get(0).getName());
-    }
-
-    @Test
-    void testFindById() {
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprintBacklog));
-
-        Optional<SprintBacklog> found = sprintBacklogService.findById(1L);
-
-        assertTrue(found.isPresent());
-        assertEquals("Sprint 1", found.get().getName());
-    }
-
-    @Test
-    void testDeleteById() {
-        doNothing().when(sprintBacklogRepository).deleteById(1L);
-
-        assertDoesNotThrow(() -> sprintBacklogService.deleteById(1L));
-        verify(sprintBacklogRepository, times(1)).deleteById(1L);
-    }
-
-    @Test
-    void testCreateSprint() {
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprint);
 
         SprintBacklog created = sprintBacklogService.createSprint("Sprint 1");
 
         assertNotNull(created);
         assertEquals("Sprint 1", created.getName());
-        assertNotNull(created.getUserStories());
-        assertNotNull(created.getTasks());
-        assertTrue(created.getUserStories().isEmpty());
-        assertTrue(created.getTasks().isEmpty());
+        verify(sprintBacklogRepository, times(1)).save(any(SprintBacklog.class));
     }
 
     @Test
-    void testAddUserStoryToSprint() {
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprintBacklog));
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+    void shouldAddUserStoryToSprint() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setId(1L);
+        sprint.setName("Sprint A");
+        sprint.setUserStories(new ArrayList<>());
 
-        SprintBacklog updated = sprintBacklogService.addUserStoryToSprint(1L, userStory);
+        UserStory us = new UserStory();
+        us.setId(2L);
 
-        assertNotNull(updated);
-        assertTrue(updated.getUserStories().contains(userStory));
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
+
+        String result = sprintBacklogService.addUserStoryToSprint(1L, 2L);
+
+        assertTrue(sprint.getUserStories().contains(us));
+        assertEquals(sprint, us.getSprintBacklog());
+        assertTrue(result.contains("ajoutée au Sprint"));
     }
 
     @Test
-    void testAddUserStoryToSprint_SprintNotFound() {
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.empty());
+    void shouldThrowIfUserStoryAlreadyAssignedToSprint() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setId(1L);
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> sprintBacklogService.addUserStoryToSprint(1L, userStory));
+        UserStory us = new UserStory();
+        us.setId(2L);
+        us.setSprintBacklog(new SprintBacklog()); // already assigned
+
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
+
+        assertThrows(IllegalStateException.class, () ->
+                sprintBacklogService.addUserStoryToSprint(1L, 2L));
     }
 
     @Test
-    void testRemoveUserStoryFromSprint() {
-        sprintBacklog.getUserStories().add(userStory);
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprintBacklog));
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+    void shouldRemoveUserStoryFromSprint() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setId(1L);
+        List<UserStory> stories = new ArrayList<>();
+        UserStory us = new UserStory();
+        us.setId(2L);
+        us.setSprintBacklog(sprint);
+        stories.add(us);
+        sprint.setUserStories(stories);
 
-        SprintBacklog updated = sprintBacklogService.removeUserStoryFromSprint(1L, userStory);
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
 
-        assertNotNull(updated);
-        assertFalse(updated.getUserStories().contains(userStory));
+        sprintBacklogService.removeUserStoryFromSprint(1L, 2L);
+
+        assertFalse(sprint.getUserStories().contains(us));
+        assertNull(us.getSprintBacklog());
     }
 
     @Test
-    void testAddTaskToSprint() {
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprintBacklog));
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+    void shouldThrowWhenRemovingUserStoryNotInSprint() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setId(1L);
+        sprint.setUserStories(new ArrayList<>());
 
-        SprintBacklog updated = sprintBacklogService.addTaskToSprint(1L, task);
+        UserStory us = new UserStory();
+        us.setId(2L);
 
-        assertNotNull(updated);
-        assertTrue(updated.getTasks().contains(task));
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                sprintBacklogService.removeUserStoryFromSprint(1L, 2L));
     }
 
     @Test
-    void testUpdateTaskStatus() {
-        sprintBacklog.getTasks().add(task);
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprintBacklog));
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprintBacklog);
+    void shouldFindSprintById() {
+        SprintBacklog sprint = new SprintBacklog();
+        sprint.setId(1L);
 
-        SprintBacklog updated = sprintBacklogService.updateTaskStatus(1L, 1L, "IN_PROGRESS");
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
 
-        assertNotNull(updated);
-        assertEquals("IN_PROGRESS", updated.getTasks().get(0).getStatus());
+        SprintBacklog found = sprintBacklogService.findSprintById(1L);
+
+        assertNotNull(found);
+        assertEquals(1L, found.getId());
+    }
+
+    @Test
+    void shouldThrowWhenSprintNotFound() {
+        when(sprintBacklogRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+                sprintBacklogService.findSprintById(999L));
+    }
+
+    @Test
+    void shouldDeleteSprint() {
+        when(sprintBacklogRepository.existsById(1L)).thenReturn(true);
+
+        sprintBacklogService.deleteSprintById(1L);
+
+        verify(sprintBacklogRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    void shouldThrowWhenDeletingNonExistentSprint() {
+        when(sprintBacklogRepository.existsById(99L)).thenReturn(false);
+
+        assertThrows(EntityNotFoundException.class, () ->
+                sprintBacklogService.deleteSprintById(99L));
     }
 }

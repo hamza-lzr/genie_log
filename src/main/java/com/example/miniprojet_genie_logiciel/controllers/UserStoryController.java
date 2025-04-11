@@ -97,4 +97,42 @@ public class UserStoryController {
         return ResponseEntity.ok(userStoryService.updateUserStoryPriority(id, priority));
 
     }
+
+    //Tasks
+    @PostMapping("/{userStoryId}/tasks")
+    public ResponseEntity<Task> addTaskToUserStory(
+            @PathVariable Long userStoryId,
+            @Valid @RequestBody Task task
+    ) {
+        Task createdTask = userStoryService.addTaskToUserStory(userStoryId, task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    }
+
+    @DeleteMapping("/{userStoryId}/tasks/{taskId}")
+    public ResponseEntity<Void> deleteTaskFromUserStory(
+            @PathVariable Long userStoryId,
+            @PathVariable Long taskId
+    ) {
+        userStoryService.deleteTaskFromUserStory(userStoryId, taskId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/tasks/{taskId}/status")
+    public ResponseEntity<Task> updateTaskStatus(
+            @PathVariable Long taskId,
+            @RequestParam String status
+    ) {
+        Task updatedTask = userStoryService.updateTaskStatus(taskId, status);
+        return ResponseEntity.ok(updatedTask);
+    }
+
+    @GetMapping("/{userStoryId}/tasks")
+    public ResponseEntity<List<Task>> getTasksForUserStory(@PathVariable Long userStoryId) {
+        return ResponseEntity.ok(userStoryService.getTasksForUserStory(userStoryId));
+    }
+
+
+
+
+
 }

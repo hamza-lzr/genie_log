@@ -2,7 +2,6 @@ package com.example.miniprojet_genie_logiciel.services;
 
 import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
 import com.example.miniprojet_genie_logiciel.entities.Project;
-import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProjectRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +28,7 @@ class ProjectServiceTest {
     @Mock
     private ProductBacklogRepository productBacklogRepository;
 
-    @Mock
-    private EpicRepository epicRepository;
+
 
     @InjectMocks
     private ProjectService projectService;
