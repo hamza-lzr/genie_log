@@ -11,4 +11,5 @@ public class PriorityDTO {
     private Long id;
     private String name;
     private Integer weight;
+
 }

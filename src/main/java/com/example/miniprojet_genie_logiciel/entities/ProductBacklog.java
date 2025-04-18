@@ -32,3 +32,5 @@ public class ProductBacklog {
     @OneToMany(mappedBy = "productBacklog")
     private List<UserStory> userStories;
 }
+
+

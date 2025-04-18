@@ -28,3 +28,4 @@ public enum Priority {
                 .orElseThrow(() -> new IllegalArgumentException("Priorité invalide : " + label));
     }
 }
+

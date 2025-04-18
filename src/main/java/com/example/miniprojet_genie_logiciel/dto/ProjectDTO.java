@@ -20,4 +20,5 @@ public class ProjectDTO {
     private ProductBacklogDTO productBacklog;
     private List<EpicDTO> epics;
     private List<SprintBacklogDTO> sprintBacklogs;
+
 }

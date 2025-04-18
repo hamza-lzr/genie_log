@@ -25,3 +25,5 @@ public enum Status {
                 .orElseThrow(() -> new IllegalArgumentException("Statut invalide : " + displayName));
     }
 }
+
+

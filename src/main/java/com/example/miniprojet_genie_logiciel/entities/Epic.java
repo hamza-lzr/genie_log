@@ -22,3 +22,5 @@ public class Epic {
     @OneToMany(mappedBy = "epic")
     private List<UserStory> userStories;
 }
+
+
