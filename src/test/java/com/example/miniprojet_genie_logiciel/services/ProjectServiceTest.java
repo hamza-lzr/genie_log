@@ -1,7 +1,11 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.ProductBacklogDTO;
+import com.example.miniprojet_genie_logiciel.dto.ProjectDTO;
 import com.example.miniprojet_genie_logiciel.entities.ProductBacklog;
 import com.example.miniprojet_genie_logiciel.entities.Project;
+import com.example.miniprojet_genie_logiciel.mapper.ProductBacklogMapper;
+import com.example.miniprojet_genie_logiciel.mapper.ProjectMapper;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProjectRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,13 +32,19 @@ class ProjectServiceTest {
     @Mock
     private ProductBacklogRepository productBacklogRepository;
 
+    @Mock
+    private ProjectMapper projectMapper;
 
+    @Mock
+    private ProductBacklogMapper productBacklogMapper;
 
     @InjectMocks
     private ProjectService projectService;
 
     private Project project;
+    private ProjectDTO projectDTO;
     private ProductBacklog productBacklog;
+    private ProductBacklogDTO productBacklogDTO;
 
     @BeforeEach
     void setUp() {
@@ -42,69 +52,95 @@ class ProjectServiceTest {
         project.setId(1L);
         project.setTitle("Test Project");
         project.setStatus("In Progress");
-        project.setStartDate(new Date());
-        project.setEndDate(new Date());
+        project.setStartDate(java.sql.Date.valueOf(LocalDate.now()));
+        project.setEndDate(java.sql.Date.valueOf(LocalDate.now().plusMonths(1)));
+
+        projectDTO = new ProjectDTO();
+        projectDTO.setId(1L);
+        projectDTO.setName("Test Project");
+        projectDTO.setDescription("Test Description");
+        projectDTO.setStatus("In Progress");
+        projectDTO.setStartDate(LocalDate.now());
+        projectDTO.setEndDate(LocalDate.now().plusMonths(1));
 
         productBacklog = new ProductBacklog();
         productBacklog.setId(1L);
         productBacklog.setName("Test Product Backlog");
+
+        productBacklogDTO = new ProductBacklogDTO();
+        productBacklogDTO.setId(1L);
+        productBacklogDTO.setName("Test Product Backlog");
     }
 
     @Test
     void testGetProjectById() {
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectMapper.toDto(project)).thenReturn(projectDTO);
 
-        Optional<Project> found = projectService.getProjectById(1L);
+        ProjectDTO found = projectService.getProjectById(1L);
 
-        assertTrue(found.isPresent());
-        assertEquals("Test Project", found.get().getTitle());
+        assertNotNull(found);
+        assertEquals("Test Project", found.getName());
+        verify(projectMapper).toDto(project);
     }
 
     @Test
     void testGetAllProjects() {
         when(projectRepository.findAll()).thenReturn(List.of(project));
+        when(projectMapper.toDto(project)).thenReturn(projectDTO);
 
-        List<Project> projects = projectService.getAllProjects();
+        List<ProjectDTO> projects = projectService.getAllProjects();
 
         assertFalse(projects.isEmpty());
         assertEquals(1, projects.size());
-        assertEquals("Test Project", projects.get(0).getTitle());
+        assertEquals("Test Project", projects.get(0).getName());
+        verify(projectMapper).toDto(project);
     }
 
     @Test
     void testSaveProject() {
+        when(projectMapper.toEntity(projectDTO)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectMapper.toDto(project)).thenReturn(projectDTO);
 
-        Project saved = projectService.saveProject(project);
+        ProjectDTO saved = projectService.saveProject(projectDTO);
 
         assertNotNull(saved);
-        assertEquals("Test Project", saved.getTitle());
-        verify(projectRepository, times(1)).save(any(Project.class));
+        assertEquals("Test Project", saved.getName());
+        verify(projectMapper).toEntity(projectDTO);
+        verify(projectRepository).save(any(Project.class));
+        verify(projectMapper).toDto(project);
     }
 
     @Test
     void testUpdateProject_Success() {
+        ProjectDTO updatedProjectDTO = new ProjectDTO();
+        updatedProjectDTO.setName("Updated Project");
+        updatedProjectDTO.setStatus("Completed");
+        updatedProjectDTO.setStartDate(LocalDate.now());
+        updatedProjectDTO.setEndDate(LocalDate.now().plusMonths(1));
+
         Project updatedProject = new Project();
         updatedProject.setTitle("Updated Project");
         updatedProject.setStatus("Completed");
-        updatedProject.setStartDate(new Date());
-        updatedProject.setEndDate(new Date());
 
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenReturn(updatedProject);
+        when(projectMapper.toDto(updatedProject)).thenReturn(updatedProjectDTO);
 
-        Project result = projectService.updateProject(updatedProject, 1L);
+        ProjectDTO result = projectService.updateProject(updatedProjectDTO, 1L);
 
         assertNotNull(result);
-        assertEquals("Updated Project", result.getTitle());
+        assertEquals("Updated Project", result.getName());
         assertEquals("Completed", result.getStatus());
+        verify(projectMapper).toDto(updatedProject);
     }
 
     @Test
     void testUpdateProject_NotFound() {
         when(projectRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Project result = projectService.updateProject(project, 1L);
+        ProjectDTO result = projectService.updateProject(projectDTO, 1L);
 
         assertNull(result);
     }
@@ -123,12 +159,14 @@ class ProjectServiceTest {
     void testLinkProductBacklog_Success() {
         when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(productBacklog));
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(productBacklogMapper.toDto(any(ProductBacklog.class))).thenReturn(productBacklogDTO);
 
-        ProductBacklog result = projectService.linkProductBacklog(1L, 1L);
+        ProductBacklogDTO result = projectService.linkProductBacklog(1L, 1L);
 
         assertNotNull(result);
-        assertEquals(project, result.getProject());
-        assertEquals(productBacklog, project.getProductBacklog());
+        assertEquals(productBacklogDTO.getId(), result.getId());
+        assertEquals(productBacklogDTO.getName(), result.getName());
+        verify(productBacklogMapper).toDto(any(ProductBacklog.class));
     }
 
     @Test
@@ -136,7 +174,7 @@ class ProjectServiceTest {
         when(productBacklogRepository.findById(1L)).thenReturn(Optional.empty());
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        ProductBacklog result = projectService.linkProductBacklog(1L, 1L);
+        ProductBacklogDTO result = projectService.linkProductBacklog(1L, 1L);
 
         assertNull(result);
     }

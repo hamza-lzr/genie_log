@@ -18,6 +18,9 @@ public class ProductBacklog {
     @Column
     private String name;
 
+    @Column
+    private String description;
+
     @OneToOne
     private Project project;
 

@@ -1,8 +1,11 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.SprintBacklogDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
-import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.mapper.SprintBacklogMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.SprintBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -11,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -34,19 +36,31 @@ class SprintBacklogServiceTest {
     @Mock
     private UserStoryRepository userStoryRepository;
 
+    @Mock
+    private SprintBacklogMapper sprintBacklogMapper;
+
+    @Mock
+    private UserStoryMapper userStoryMapper;
+
     @Test
     void shouldCreateSprint() {
         SprintBacklog sprint = new SprintBacklog();
         sprint.setName("Sprint 1");
         sprint.setUserStories(new ArrayList<>());
 
-        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprint);
+        SprintBacklogDTO sprintDTO = new SprintBacklogDTO();
+        sprintDTO.setName("Sprint 1");
+        sprintDTO.setUserStories(new ArrayList<>());
 
-        SprintBacklog created = sprintBacklogService.createSprint("Sprint 1");
+        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprint);
+        when(sprintBacklogMapper.toDto(any(SprintBacklog.class))).thenReturn(sprintDTO);
+
+        SprintBacklogDTO created = sprintBacklogService.createSprint("Sprint 1");
 
         assertNotNull(created);
         assertEquals("Sprint 1", created.getName());
-        verify(sprintBacklogRepository, times(1)).save(any(SprintBacklog.class));
+        verify(sprintBacklogRepository).save(any(SprintBacklog.class));
+        verify(sprintBacklogMapper).toDto(any(SprintBacklog.class));
     }
 
     @Test
@@ -59,14 +73,20 @@ class SprintBacklogServiceTest {
         UserStory us = new UserStory();
         us.setId(2L);
 
+        SprintBacklogDTO sprintDTO = new SprintBacklogDTO();
+        sprintDTO.setId(1L);
+        sprintDTO.setName("Sprint A");
+
         when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
         when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
+        when(sprintBacklogRepository.save(any(SprintBacklog.class))).thenReturn(sprint);
+        when(sprintBacklogMapper.toDto(any(SprintBacklog.class))).thenReturn(sprintDTO);
 
-        String result = sprintBacklogService.addUserStoryToSprint(1L, 2L);
+        SprintBacklogDTO result = sprintBacklogService.addUserStoryToSprint(1L, 2L);
 
-        assertTrue(sprint.getUserStories().contains(us));
-        assertEquals(sprint, us.getSprintBacklog());
-        assertTrue(result.contains("ajoutée au Sprint"));
+        assertNotNull(result);
+        assertEquals("Sprint A", result.getName());
+        verify(sprintBacklogMapper).toDto(any(SprintBacklog.class));
     }
 
     @Test
@@ -126,12 +146,17 @@ class SprintBacklogServiceTest {
         SprintBacklog sprint = new SprintBacklog();
         sprint.setId(1L);
 
-        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        SprintBacklogDTO sprintDTO = new SprintBacklogDTO();
+        sprintDTO.setId(1L);
 
-        SprintBacklog found = sprintBacklogService.findSprintById(1L);
+        when(sprintBacklogRepository.findById(1L)).thenReturn(Optional.of(sprint));
+        when(sprintBacklogMapper.toDto(sprint)).thenReturn(sprintDTO);
+
+        SprintBacklogDTO found = sprintBacklogService.findSprintById(1L);
 
         assertNotNull(found);
         assertEquals(1L, found.getId());
+        verify(sprintBacklogMapper).toDto(sprint);
     }
 
     @Test

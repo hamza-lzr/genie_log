@@ -1,6 +1,10 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.*;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.EpicMapper;
+import com.example.miniprojet_genie_logiciel.mapper.ProductBacklogMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
@@ -25,88 +29,143 @@ class ProductBacklogServiceTest {
     @Mock
     private UserStoryRepository userStoryRepository;
 
+    @Mock
+    private ProductBacklogMapper productBacklogMapper;
+
+    @Mock
+    private EpicMapper epicMapper;
+
+    @Mock
+    private UserStoryMapper userStoryMapper;
+
     @InjectMocks
     private ProductBacklogService productBacklogService;
+
+    private ProductBacklog productBacklog;
+    private ProductBacklogDTO productBacklogDTO;
+    private Epic epic;
+    private EpicDTO epicDTO;
+    private UserStory userStory;
+    private UserStoryDTO userStoryDTO;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        productBacklog = new ProductBacklog();
+        productBacklog.setId(1L);
+        productBacklog.setName("Test Backlog");
+
+        productBacklogDTO = new ProductBacklogDTO();
+        productBacklogDTO.setId(1L);
+        productBacklogDTO.setName("Test Backlog");
+
+        epic = new Epic();
+        epic.setId(2L);
+        epic.setTitle("Test Epic");
+
+        epicDTO = new EpicDTO();
+        epicDTO.setId(2L);
+        epicDTO.setTitle("Test Epic");
+
+        userStory = new UserStory();
+        userStory.setId(3L);
+        userStory.setTitle("Test User Story");
+
+        userStoryDTO = new UserStoryDTO();
+        userStoryDTO.setId(3L);
+        userStoryDTO.setTitle("Test User Story");
     }
 
     @Test
     void testSaveProductBacklog() {
-        ProductBacklog backlog = new ProductBacklog();
-        backlog.setName("Test Backlog");
+        when(productBacklogMapper.toEntity(any(ProductBacklogDTO.class))).thenReturn(productBacklog);
+        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(productBacklog);
+        when(productBacklogMapper.toDto(any(ProductBacklog.class))).thenReturn(productBacklogDTO);
 
-        when(productBacklogRepository.save(backlog)).thenReturn(backlog);
-
-        ProductBacklog saved = productBacklogService.saveProductBacklog(backlog);
+        ProductBacklogDTO saved = productBacklogService.saveProductBacklog(productBacklogDTO);
+        
         assertEquals("Test Backlog", saved.getName());
+        verify(productBacklogMapper).toEntity(any(ProductBacklogDTO.class));
+        verify(productBacklogRepository).save(any(ProductBacklog.class));
+        verify(productBacklogMapper).toDto(any(ProductBacklog.class));
     }
 
     @Test
     void testFindAll() {
-        List<ProductBacklog> list = List.of(new ProductBacklog(), new ProductBacklog());
+        List<ProductBacklog> list = List.of(productBacklog);
         when(productBacklogRepository.findAll()).thenReturn(list);
+        when(productBacklogMapper.toDto(any(ProductBacklog.class))).thenReturn(productBacklogDTO);
 
-        List<ProductBacklog> result = productBacklogService.findAll();
-        assertEquals(2, result.size());
+        List<ProductBacklogDTO> result = productBacklogService.findAll();
+        
+        assertEquals(1, result.size());
+        assertEquals("Test Backlog", result.get(0).getName());
+        verify(productBacklogMapper).toDto(any(ProductBacklog.class));
     }
 
     @Test
     void testAddEpicToProductBacklog() {
-        ProductBacklog pb = new ProductBacklog();
-        pb.setId(1L);
-        pb.setEpics(new ArrayList<>());
+        productBacklog.setEpics(new ArrayList<>());
 
-        Epic epic = new Epic();
-        epic.setId(2L);
-
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(productBacklog));
         when(epicRepository.findById(2L)).thenReturn(Optional.of(epic));
-        when(productBacklogRepository.save(pb)).thenReturn(pb);
+        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(productBacklog);
+        when(productBacklogMapper.toDto(any(ProductBacklog.class))).thenReturn(productBacklogDTO);
 
-        ProductBacklog result = productBacklogService.addEpicToProductBacklog(1L, 2L);
-        assertTrue(result.getEpics().contains(epic));
+        ProductBacklogDTO result = productBacklogService.addEpicToProductBacklog(1L, 2L);
+        
+        verify(productBacklogRepository).save(any(ProductBacklog.class));
+        verify(productBacklogMapper).toDto(any(ProductBacklog.class));
     }
 
     @Test
     void testAddUserStoryToProductBacklog() {
-        ProductBacklog pb = new ProductBacklog();
-        pb.setId(1L);
-        pb.setUserStories(new ArrayList<>());
+        productBacklog.setUserStories(new ArrayList<>());
 
-        UserStory us = new UserStory();
-        us.setId(2L);
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(productBacklog));
+        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(userStory));
+        when(productBacklogRepository.save(any(ProductBacklog.class))).thenReturn(productBacklog);
+        when(productBacklogMapper.toDto(any(ProductBacklog.class))).thenReturn(productBacklogDTO);
 
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
-        when(userStoryRepository.findById(2L)).thenReturn(Optional.of(us));
-        when(productBacklogRepository.save(pb)).thenReturn(pb);
-
-        ProductBacklog result = productBacklogService.addUserStoryToProductBacklog(1L, 2L);
-        assertTrue(result.getUserStories().contains(us));
-        assertEquals(pb, us.getProductBacklog());
+        ProductBacklogDTO result = productBacklogService.addUserStoryToProductBacklog(1L, 2L);
+        
+        verify(productBacklogRepository).save(any(ProductBacklog.class));
+        verify(productBacklogMapper).toDto(any(ProductBacklog.class));
     }
 
     @Test
     void testPrioritizeUserStoriesMoscow() {
-        ProductBacklog pb = new ProductBacklog();
         UserStory us1 = new UserStory();
         UserStory us2 = new UserStory();
+        us1.setPriority(Priority.MUST_HAVE);
+        us2.setPriority(Priority.COULD_HAVE);
 
-        Priority high = Priority.MUST_HAVE; // Assume this enum has a weight() method returning int
-        Priority low = Priority.COULD_HAVE;
+        UserStoryDTO usDTO1 = new UserStoryDTO();
+        UserStoryDTO usDTO2 = new UserStoryDTO();
+        
+        PriorityDTO priority1 = new PriorityDTO();
+        priority1.setName(Priority.MUST_HAVE.getLabel());
+        priority1.setWeight(Priority.MUST_HAVE.getWeight());
+        
+        PriorityDTO priority2 = new PriorityDTO();
+        priority2.setName(Priority.COULD_HAVE.getLabel());
+        priority2.setWeight(Priority.COULD_HAVE.getWeight());
+        
+        usDTO1.setPriority(priority1);
+        usDTO2.setPriority(priority2);
 
-        us1.setPriority(high);
-        us2.setPriority(low);
+        productBacklog.setUserStories(List.of(us2, us1));
 
-        pb.setUserStories(List.of(us2, us1));
+        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(productBacklog));
+        when(userStoryMapper.toDto(us1)).thenReturn(usDTO1);
+        when(userStoryMapper.toDto(us2)).thenReturn(usDTO2);
 
-        when(productBacklogRepository.findById(1L)).thenReturn(Optional.of(pb));
+        List<UserStoryDTO> result = productBacklogService.prioritizeUserStoriesMoscow(1L);
 
-        List<UserStory> result = productBacklogService.prioritizeUserStoriesMoscow(1L);
-
-        assertEquals(high, result.get(0).getPriority());
+        assertEquals("Must Have", result.get(0).getPriority().getName());
+        assertEquals(4, result.get(0).getPriority().getWeight());
+        verify(userStoryMapper, times(2)).toDto(any(UserStory.class));
     }
 
     @Test

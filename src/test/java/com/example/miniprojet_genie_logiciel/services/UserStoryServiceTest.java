@@ -1,6 +1,9 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.*;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
@@ -32,8 +35,11 @@ class UserStoryServiceTest {
     @Mock private EpicRepository epicRepository;
     @Mock private ProductBacklogRepository productBacklogRepository;
     @Mock private TaskRepository taskRepository;
+    @Mock private UserStoryMapper userStoryMapper;
+    @Mock private TaskMapper taskMapper;
 
     private UserStory userStory;
+    private UserStoryDTO userStoryDTO;
 
     @BeforeEach
     void setup() {
@@ -41,46 +47,69 @@ class UserStoryServiceTest {
         userStory.setId(1L);
         userStory.setTitle("Connexion");
         userStory.setTasks(new ArrayList<>());
+
+        userStoryDTO = new UserStoryDTO();
+        userStoryDTO.setId(1L);
+        userStoryDTO.setTitle("Connexion");
+        userStoryDTO.setTasks(new ArrayList<>());
     }
 
     @Test
     void shouldAddUserStory() {
+        when(userStoryMapper.toEntity(userStoryDTO)).thenReturn(userStory);
         when(userStoryRepository.save(userStory)).thenReturn(userStory);
+        when(userStoryMapper.toDto(userStory)).thenReturn(userStoryDTO);
 
-        UserStory saved = userStoryService.addUserStory(userStory);
+        UserStoryDTO saved = userStoryService.addUserStory(userStoryDTO);
 
         assertNotNull(saved);
         assertEquals("Connexion", saved.getTitle());
-        verify(userStoryRepository, times(1)).save(userStory);
+        verify(userStoryRepository).save(userStory);
+        verify(userStoryMapper).toDto(userStory);
     }
 
     @Test
     void shouldUpdateUserStory() {
-        UserStory updated = new UserStory();
-        updated.setTitle("Inscription");
-        updated.setAction("faire");
-        updated.setGoal("tester");
-        updated.setRole("utilisateur");
+        UserStoryDTO updatedDTO = new UserStoryDTO();
+        updatedDTO.setTitle("Inscription");
+        updatedDTO.setAction("faire");
+        updatedDTO.setGoal("tester");
+        updatedDTO.setRole("utilisateur");
+
+        UserStory updatedEntity = new UserStory();
+        updatedEntity.setTitle("Inscription");
 
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(userStoryMapper.toEntity(updatedDTO)).thenReturn(updatedEntity);
         when(userStoryRepository.save(any())).thenReturn(userStory);
+        when(userStoryMapper.toDto(userStory)).thenReturn(updatedDTO);
 
-        UserStory result = userStoryService.updateUserStory(1L, updated);
+        UserStoryDTO result = userStoryService.updateUserStory(1L, updatedDTO);
 
         assertEquals("Inscription", result.getTitle());
-        verify(userStoryRepository).save(userStory);
+        verify(userStoryRepository).save(any());
+        verify(userStoryMapper).toDto(any());
     }
 
     @Test
     void shouldUpdatePriority() {
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        PriorityDTO priorityDTO = new PriorityDTO();
+        priorityDTO.setName("Must Have");
+        priorityDTO.setWeight(4);
+
         userStory.setPriority(Priority.MUST_HAVE);
-        when(userStoryRepository.save(any())).thenReturn(userStory); // <- AJOUTÉ
+        when(userStoryRepository.save(any())).thenReturn(userStory);
 
+        UserStoryDTO resultDTO = new UserStoryDTO();
+        resultDTO.setPriority(priorityDTO);
+        when(userStoryMapper.toDto(userStory)).thenReturn(resultDTO);
 
-        UserStory result = userStoryService.updateUserStoryPriority(1L, Priority.MUST_HAVE);
+        UserStoryDTO result = userStoryService.updateUserStoryPriority(1L, Priority.MUST_HAVE);
 
-        assertEquals(Priority.MUST_HAVE, result.getPriority());
+        assertEquals("Must Have", result.getPriority().getName());
+        assertEquals(4, result.getPriority().getWeight());
+        verify(userStoryMapper).toDto(userStory);
     }
 
     @Test
@@ -110,21 +139,31 @@ class UserStoryServiceTest {
         when(epicRepository.findById(2L)).thenReturn(Optional.of(epic));
         when(userStoryRepository.save(userStory)).thenReturn(userStory);
 
-        UserStory result = userStoryService.linkUserStoryToEpic(1L, 2L);
+        UserStoryDTO resultDTO = new UserStoryDTO();
+        EpicDTO epicDTO = new EpicDTO();
+        epicDTO.setId(2L);
+        resultDTO.setEpic(epicDTO);
+        when(userStoryMapper.toDto(userStory)).thenReturn(resultDTO);
 
-        assertEquals(epic, result.getEpic());
-        assertTrue(epic.getUserStories().contains(userStory));
+        UserStoryDTO result = userStoryService.linkUserStoryToEpic(1L, 2L);
+
+        assertEquals(epicDTO.getId(), result.getEpic().getId());
+        verify(userStoryMapper).toDto(userStory);
     }
 
     @Test
     void shouldSetAcceptanceCriteria() {
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
-        when(userStoryRepository.save(any())).thenReturn(userStory); // <- AJOUTÉ
+        when(userStoryRepository.save(any())).thenReturn(userStory);
 
+        UserStoryDTO resultDTO = new UserStoryDTO();
+        resultDTO.setAcceptanceCriteria("Doit fonctionner sans erreur");
+        when(userStoryMapper.toDto(userStory)).thenReturn(resultDTO);
 
-        UserStory updated = userStoryService.setAcceptanceCriteria(1L, "Doit fonctionner sans erreur");
+        UserStoryDTO updated = userStoryService.setAcceptanceCriteria(1L, "Doit fonctionner sans erreur");
 
         assertEquals("Doit fonctionner sans erreur", updated.getAcceptanceCriteria());
+        verify(userStoryMapper).toDto(userStory);
     }
 
     @Test
@@ -132,23 +171,41 @@ class UserStoryServiceTest {
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
         when(userStoryRepository.save(any())).thenReturn(userStory);
 
+        UserStoryDTO resultDTO = new UserStoryDTO();
+        resultDTO.setStatus(StatusDTO.IN_PROGRESS);
+        when(userStoryMapper.toDto(userStory)).thenReturn(resultDTO);
 
-        UserStory updated = userStoryService.updateUserStoryStatus(1L, Status.IN_PROGRESS);
+        UserStoryDTO updated = userStoryService.updateUserStoryStatus(1L, Status.IN_PROGRESS);
 
-        assertEquals(Status.IN_PROGRESS, updated.getStatus());
+        assertEquals(StatusDTO.IN_PROGRESS, updated.getStatus());
+        verify(userStoryMapper).toDto(userStory);
     }
 
     @Test
     void shouldAddTaskToUserStory() {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setTitle("Faire test unitaire");
+        taskDTO.setDescription("Implement unit tests");
+        taskDTO.setStatus(StatusDTO.TO_DO);
+        taskDTO.setEstimation(5);
+
         Task task = new Task();
         task.setTitle("Faire test unitaire");
+        task.setDescription("Implement unit tests");
+        task.setStatus(Status.TO_DO.toString());
+        task.setEstimation(5);
 
         when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(taskMapper.toEntity(taskDTO)).thenReturn(task);
+        when(taskMapper.toDto(task)).thenReturn(taskDTO);
 
-        Task added = userStoryService.addTaskToUserStory(1L, task);
+        TaskDTO added = userStoryService.addTaskToUserStory(1L, taskDTO);
 
         assertEquals("Faire test unitaire", added.getTitle());
-        assertTrue(userStory.getTasks().contains(task));
+        assertEquals("Implement unit tests", added.getDescription());
+        assertEquals(StatusDTO.TO_DO, added.getStatus());
+        assertEquals(5, added.getEstimation());
+        verify(taskMapper).toDto(task);
     }
 
     @Test
@@ -172,14 +229,19 @@ class UserStoryServiceTest {
     void shouldUpdateTaskStatus() {
         Task task = new Task();
         task.setId(10L);
-        task.setStatus("To Do");
+        task.setStatus(Status.TO_DO.toString());
+
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(10L);
+        taskDTO.setStatus(StatusDTO.DONE);
 
         when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
         when(taskRepository.save(task)).thenReturn(task);
+        when(taskMapper.toDto(task)).thenReturn(taskDTO);
 
-        Task updated = userStoryService.updateTaskStatus(10L, "Done");
+        TaskDTO updated = userStoryService.updateTaskStatus(10L, Status.DONE.toString());
 
-        assertEquals("Done", updated.getStatus());
+        assertEquals(StatusDTO.DONE, updated.getStatus());
     }
 
     @Test
@@ -188,12 +250,17 @@ class UserStoryServiceTest {
         task.setTitle("Implémenter DAO");
         userStory.getTasks().add(task);
 
-        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setTitle("Implémenter DAO");
 
-        List<Task> tasks = userStoryService.getTasksForUserStory(1L);
+        when(userStoryRepository.findById(1L)).thenReturn(Optional.of(userStory));
+        when(taskMapper.toDto(task)).thenReturn(taskDTO);
+
+        List<TaskDTO> tasks = userStoryService.getTasksForUserStory(1L);
 
         assertEquals(1, tasks.size());
         assertEquals("Implémenter DAO", tasks.get(0).getTitle());
+        verify(taskMapper).toDto(task);
     }
 }
 

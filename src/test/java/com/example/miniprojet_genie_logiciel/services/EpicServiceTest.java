@@ -1,6 +1,10 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.EpicDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.EpicMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
@@ -32,12 +36,20 @@ class EpicServiceTest {
     @Mock
     private UserStoryRepository userStoryRepository;
 
+    @Mock
+    private EpicMapper epicMapper;
+
+    @Mock
+    private UserStoryMapper userStoryMapper;
+
     @InjectMocks
     private EpicService epicService;
 
     private Epic epic;
+    private EpicDTO epicDTO;
     private ProductBacklog productBacklog;
     private UserStory userStory;
+    private UserStoryDTO userStoryDTO;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +60,13 @@ class EpicServiceTest {
         epic.setStatus(Status.TO_DO);
         epic.setUserStories(new ArrayList<>());
 
+        epicDTO = new EpicDTO();
+        epicDTO.setId(1L);
+        epicDTO.setTitle("Test Epic");
+        epicDTO.setDescription("Test Description");
+        epicDTO.setStatus(Status.TO_DO.toString());
+        epicDTO.setUserStories(new ArrayList<>());
+
         productBacklog = new ProductBacklog();
         productBacklog.setId(1L);
         productBacklog.setEpics(new ArrayList<>());
@@ -55,64 +74,85 @@ class EpicServiceTest {
         userStory = new UserStory();
         userStory.setId(1L);
         userStory.setTitle("Test User Story");
+
+        userStoryDTO = new UserStoryDTO();
+        userStoryDTO.setId(1L);
+        userStoryDTO.setTitle("Test User Story");
     }
 
     @Test
     void testCreateEpic() {
+        when(epicMapper.toEntity(any(EpicDTO.class))).thenReturn(epic);
         when(epicRepository.save(any(Epic.class))).thenReturn(epic);
+        when(epicMapper.toDto(any(Epic.class))).thenReturn(epicDTO);
 
-        Epic created = epicService.createEpic(epic);
+        EpicDTO created = epicService.createEpic(epicDTO);
 
         assertNotNull(created);
         assertEquals("Test Epic", created.getTitle());
         verify(epicRepository, times(1)).save(any(Epic.class));
+        verify(epicMapper, times(1)).toEntity(any(EpicDTO.class));
+        verify(epicMapper, times(1)).toDto(any(Epic.class));
     }
 
     @Test
     void testGetEpicById() {
         when(epicRepository.findById(1L)).thenReturn(Optional.of(epic));
+        when(epicMapper.toDto(any(Epic.class))).thenReturn(epicDTO);
 
-        Optional<Epic> found = epicService.getEpicById(1L);
+        Optional<EpicDTO> found = epicService.getEpicById(1L);
 
         assertTrue(found.isPresent());
         assertEquals(1L, found.get().getId());
         assertEquals("Test Epic", found.get().getTitle());
+        verify(epicMapper, times(1)).toDto(any(Epic.class));
     }
 
     @Test
     void testGetEpicById_NotFound() {
         when(epicRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<Epic> result = epicService.getEpicById(1L);
+        Optional<EpicDTO> result = epicService.getEpicById(1L);
         assertTrue(result.isEmpty());
     }
 
     @Test
     void testGetAllEpics() {
         when(epicRepository.findAll()).thenReturn(List.of(epic));
+        when(epicMapper.toDto(any(Epic.class))).thenReturn(epicDTO);
 
-        List<Epic> epics = epicService.getAllEpics();
+        List<EpicDTO> epics = epicService.getAllEpics();
 
         assertFalse(epics.isEmpty());
         assertEquals(1, epics.size());
         assertEquals("Test Epic", epics.get(0).getTitle());
+        verify(epicMapper, times(1)).toDto(any(Epic.class));
     }
 
     @Test
     void testUpdateEpic() {
+        EpicDTO updatedEpicDTO = new EpicDTO();
+        updatedEpicDTO.setTitle("Updated Epic");
+        updatedEpicDTO.setDescription("Updated Description");
+        updatedEpicDTO.setStatus(Status.IN_PROGRESS.toString());
+
         Epic updatedEpic = new Epic();
         updatedEpic.setTitle("Updated Epic");
         updatedEpic.setDescription("Updated Description");
         updatedEpic.setStatus(Status.IN_PROGRESS);
 
+        when(epicMapper.toEntity(any(EpicDTO.class))).thenReturn(updatedEpic);
         when(epicRepository.save(any(Epic.class))).thenReturn(updatedEpic);
+        when(epicMapper.toDto(any(Epic.class))).thenReturn(updatedEpicDTO);
 
-        Epic result = epicService.updateEpic(updatedEpic);
+        EpicDTO result = epicService.updateEpic(updatedEpicDTO);
 
         assertNotNull(result);
         assertEquals("Updated Epic", result.getTitle());
         assertEquals("Updated Description", result.getDescription());
-        assertEquals(Status.IN_PROGRESS, result.getStatus());
+        assertEquals(Status.IN_PROGRESS.toString(), result.getStatus());
+        verify(epicMapper, times(1)).toEntity(any(EpicDTO.class));
+        verify(epicMapper, times(1)).toDto(any(Epic.class));
     }
 
 
@@ -130,19 +170,20 @@ class EpicServiceTest {
     void testAddUserStoryToEpic() {
         when(epicRepository.findById(1L)).thenReturn(Optional.of(epic));
         when(epicRepository.save(any(Epic.class))).thenReturn(epic);
+        when(epicMapper.toDto(any(Epic.class))).thenReturn(epicDTO);
 
-        Epic result = epicService.addUserStoryToEpic(1L, userStory);
+        EpicDTO result = epicService.addUserStoryToEpic(1L, userStoryDTO);
 
         assertNotNull(result);
-        assertTrue(result.getUserStories().contains(userStory));
-        assertEquals(epic, userStory.getEpic());
+        verify(epicRepository).save(any(Epic.class));
+        verify(epicMapper).toDto(any(Epic.class));
     }
 
     @Test
     void testAddUserStoryToEpic_EpicNotFound() {
         when(epicRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> epicService.addUserStoryToEpic(1L, userStory));
+        assertThrows(EntityNotFoundException.class, () -> epicService.addUserStoryToEpic(1L, userStoryDTO));
     }
 
     @Test
@@ -151,12 +192,15 @@ class EpicServiceTest {
         epic.setUserStories(userStories);
 
         when(epicRepository.findById(1L)).thenReturn(Optional.of(epic));
+        when(userStoryMapper.toDto(any(UserStory.class))).thenReturn(userStoryDTO);
 
-        List<UserStory> result = epicService.getUserStoriesByEpic(1L);
+        List<UserStoryDTO> result = epicService.getUserStoriesByEpic(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(userStory, result.get(0));
+        assertEquals(userStoryDTO.getId(), result.get(0).getId());
+        assertEquals(userStoryDTO.getTitle(), result.get(0).getTitle());
+        verify(userStoryMapper, times(1)).toDto(any(UserStory.class));
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.example.miniprojet_genie_logiciel.controllers;
 
 import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.services.ProductBacklogService;
+import com.example.miniprojet_genie_logiciel.dto.*;
+import com.example.miniprojet_genie_logiciel.mapper.ProductBacklogMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/product-backlog")
@@ -16,34 +19,31 @@ import java.util.List;
 public class ProductBacklogController {
 
     private final ProductBacklogService productBacklogService;
+    private final ProductBacklogMapper productBacklogMapper;
 
-    // Récupérer tous les ProductBacklogs
     @GetMapping
-    public ResponseEntity<List<ProductBacklog>> getAll() {
-        List<ProductBacklog> productBacklogs = productBacklogService.findAll();
+    public ResponseEntity<List<ProductBacklogDTO>> getAll() {
+        List<ProductBacklogDTO> productBacklogs = productBacklogService.findAll();
         return ResponseEntity.ok(productBacklogs);
     }
 
-    // Récupérer un ProductBacklog par son id
     @GetMapping("/{id}")
-    public ResponseEntity<ProductBacklog> getById(@PathVariable Long id) {
+    public ResponseEntity<ProductBacklogDTO> getById(@PathVariable Long id) {
         return productBacklogService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Créer un nouveau ProductBacklog
     @PostMapping
-    public ResponseEntity<ProductBacklog> create(@RequestBody ProductBacklog productBacklog) {
-        ProductBacklog saved = productBacklogService.saveProductBacklog(productBacklog);
+    public ResponseEntity<ProductBacklogDTO> create(@RequestBody ProductBacklogDTO productBacklogDTO) {
+        ProductBacklogDTO saved = productBacklogService.saveProductBacklog(productBacklogDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // Mettre à jour un ProductBacklog existant
     @PutMapping("/{id}")
-    public ResponseEntity<ProductBacklog> update(@PathVariable Long id,
-                                                 @RequestBody ProductBacklog productBacklog) {
-        ProductBacklog updated = productBacklogService.updateProductBacklog(productBacklog, id);
+    public ResponseEntity<ProductBacklogDTO> update(@PathVariable Long id,
+                                                 @RequestBody ProductBacklogDTO productBacklogDTO) {
+        ProductBacklogDTO updated = productBacklogService.updateProductBacklog(productBacklogDTO, id);
         return ResponseEntity.ok(updated);
     }
 
@@ -60,22 +60,21 @@ public class ProductBacklogController {
 
     // Ajouter un Epic à un ProductBacklog
     @PostMapping("/{backlogId}/link-epic/{epicId}")
-    public ResponseEntity<ProductBacklog> addEpic(@PathVariable Long backlogId,
+    public ResponseEntity<ProductBacklogDTO> addEpic(@PathVariable Long backlogId,
                                                   @PathVariable Long epicId) {
         try {
-            ProductBacklog updated = productBacklogService.addEpicToProductBacklog(backlogId, epicId);
+            ProductBacklogDTO updated = productBacklogService.addEpicToProductBacklog(backlogId, epicId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // Supprimer un Epic d'un ProductBacklog
     @DeleteMapping("/{backlogId}/unlink-epic/{epicId}")
-    public ResponseEntity<ProductBacklog> removeEpic(@PathVariable Long backlogId,
+    public ResponseEntity<ProductBacklogDTO> removeEpic(@PathVariable Long backlogId,
                                                      @PathVariable Long epicId) {
         try {
-            ProductBacklog updated = productBacklogService.removeEpicFromProductBacklog(backlogId, epicId);
+            ProductBacklogDTO updated = productBacklogService.removeEpicFromProductBacklog(backlogId, epicId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -84,22 +83,21 @@ public class ProductBacklogController {
 
     // Ajouter une UserStory à un ProductBacklog
     @PostMapping("/{backlogId}/link-us/{usId}")
-    public ResponseEntity<ProductBacklog> addUserStory(@PathVariable Long backlogId,
+    public ResponseEntity<ProductBacklogDTO> addUserStory(@PathVariable Long backlogId,
                                                        @PathVariable Long usId) {
         try {
-            ProductBacklog updated = productBacklogService.addUserStoryToProductBacklog(backlogId, usId);
+            ProductBacklogDTO updated = productBacklogService.addUserStoryToProductBacklog(backlogId, usId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // Supprimer une UserStory d'un ProductBacklog
     @DeleteMapping("/{backlogId}/unlink-us/{usId}")
-    public ResponseEntity<ProductBacklog> removeUserStory(@PathVariable Long backlogId,
+    public ResponseEntity<ProductBacklogDTO> removeUserStory(@PathVariable Long backlogId,
                                                           @PathVariable Long usId) {
         try {
-            ProductBacklog updated = productBacklogService.removeUserStoryFromProductBacklog(backlogId, usId);
+            ProductBacklogDTO updated = productBacklogService.removeUserStoryFromProductBacklog(backlogId, usId);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -108,10 +106,9 @@ public class ProductBacklogController {
 
     // Récupérer les UserStories triées par priorité (méthode MoSCoW)
     @GetMapping("/{backlogId}/user-stories/prioritized")
-    public ResponseEntity<List<UserStory>> getPrioritizedUserStories(@PathVariable Long backlogId) {
+    public ResponseEntity<List<UserStoryDTO>> getPrioritizedUserStories(@PathVariable Long backlogId) {
         try {
-
-            List<UserStory> prioritized = productBacklogService.prioritizeUserStoriesMoscow(backlogId);
+            List<UserStoryDTO> prioritized = productBacklogService.prioritizeUserStoriesMoscow(backlogId);
             return ResponseEntity.ok(prioritized);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -119,13 +116,13 @@ public class ProductBacklogController {
     }
 
     @GetMapping("/{backlogId}/user-stories/filter")
-    public ResponseEntity<List<UserStory>> filterUserStories(
+    public ResponseEntity<List<UserStoryDTO>> filterUserStories(
             @PathVariable Long backlogId,
-            @RequestParam(required = false) Status status,
-            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) StatusDTO status,
+            @RequestParam(required = false) PriorityDTO priority,
             @RequestParam(required = false) String keyword) {
 
-        List<UserStory> result = productBacklogService.filterUserStories(backlogId, status, priority, keyword);
+        List<UserStoryDTO> result = productBacklogService.filterUserStories(backlogId, status, priority, keyword);
         return ResponseEntity.ok(result);
     }
 

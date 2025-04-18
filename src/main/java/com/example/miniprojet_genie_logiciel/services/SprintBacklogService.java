@@ -1,8 +1,11 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.SprintBacklogDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
-import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.mapper.SprintBacklogMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.SprintBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -10,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,17 +23,20 @@ public class SprintBacklogService {
 
     private final SprintBacklogRepository sprintBacklogRepository;
     private final UserStoryRepository userStoryRepository;
+    private final SprintBacklogMapper sprintBacklogMapper;
+    private final UserStoryMapper userStoryMapper;
 
     // Créer un nouveau sprint vide
-    public SprintBacklog createSprint(String name) {
+    public SprintBacklogDTO createSprint(String name) {
         SprintBacklog sprint = new SprintBacklog();
         sprint.setName(name);
         sprint.setUserStories(List.of()); // initialise à liste vide
-        return sprintBacklogRepository.save(sprint);
+        SprintBacklog savedSprint = sprintBacklogRepository.save(sprint);
+        return sprintBacklogMapper.toDto(savedSprint);
     }
 
     // Ajouter une User Story à un sprint
-    public String addUserStoryToSprint(Long sprintId, Long userStoryId) {
+    public SprintBacklogDTO addUserStoryToSprint(Long sprintId, Long userStoryId) {
         SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
                 .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
         UserStory userStory = userStoryRepository.findById(userStoryId)
@@ -46,7 +51,8 @@ public class SprintBacklogService {
         userStory.setSprintBacklog(sprint);
         sprint.getUserStories().add(userStory);
 
-        return "User Story [id=" + userStory.getId() + "] ajoutée au Sprint '" + sprint.getName() + "' [id=" + sprint.getId() + "]";
+        SprintBacklog savedSprint = sprintBacklogRepository.save(sprint);
+        return sprintBacklogMapper.toDto(savedSprint);
     }
 
     // Retirer une User Story d'un Sprint
@@ -65,14 +71,17 @@ public class SprintBacklogService {
     }
 
     // Récupérer tous les sprints
-    public List<SprintBacklog> findAllSprints() {
-        return sprintBacklogRepository.findAll();
+    public List<SprintBacklogDTO> findAllSprints() {
+        return sprintBacklogRepository.findAll().stream()
+                .map(sprintBacklogMapper::toDto)
+                .toList();
     }
 
     // Récupérer un sprint par ID
-    public SprintBacklog findSprintById(Long sprintId) {
-        return sprintBacklogRepository.findById(sprintId)
+    public SprintBacklogDTO findSprintById(Long sprintId) {
+        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
                 .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
+        return sprintBacklogMapper.toDto(sprint);
     }
 
     // Supprimer un sprint par ID

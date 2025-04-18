@@ -1,6 +1,10 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
@@ -23,28 +27,34 @@ public class UserStoryService {
     private final EpicRepository epicRepository;
     private final ProductBacklogRepository productBacklogRepository;
     private final TaskRepository taskRepository;
+    private final UserStoryMapper userStoryMapper;
+    private final TaskMapper taskMapper;
 
 
     // ==== CRUD Operations ====
-    public UserStory addUserStory( UserStory userStory) {
-        return userStoryRepository.save(userStory);
+    public UserStoryDTO addUserStory(UserStoryDTO userStoryDTO) {
+        UserStory userStory = userStoryMapper.toEntity(userStoryDTO);
+        UserStory savedUserStory = userStoryRepository.save(userStory);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
-    public UserStory updateUserStory(Long id, UserStory updatedStory) {
-        UserStory existing = getUserStoryById(id);
+    public UserStoryDTO updateUserStory(Long id, UserStoryDTO updatedStoryDTO) {
+        UserStory existing = getUserStoryOrThrow(id);
+        UserStory updatedStory = userStoryMapper.toEntity(updatedStoryDTO);
         existing.setTitle(updatedStory.getTitle());
         existing.setAction(updatedStory.getAction());
         existing.setRole(updatedStory.getRole());
         existing.setGoal(updatedStory.getGoal());
-        return userStoryRepository.save(existing);
-
+        UserStory savedUserStory = userStoryRepository.save(existing);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
 
-    public UserStory updateUserStoryPriority(Long id, Priority priority) {
+    public UserStoryDTO updateUserStoryPriority(Long id, Priority priority) {
         UserStory existing = getUserStoryOrThrow(id);
         existing.setPriority(priority);
-        return userStoryRepository.save(existing);
+        UserStory savedUserStory = userStoryRepository.save(existing);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
 
@@ -56,7 +66,7 @@ public class UserStoryService {
     }
 
     // ==== Business Logic ====
-    public UserStory linkUserStoryToEpic(Long userStoryId, Long epicId) {
+    public UserStoryDTO linkUserStoryToEpic(Long userStoryId, Long epicId) {
         UserStory userStory = userStoryRepository.findById(userStoryId)
                 .orElseThrow(() -> new EntityNotFoundException("UserStory not found with id: " + userStoryId));
         Epic epic = epicRepository.findById(epicId)
@@ -68,10 +78,11 @@ public class UserStoryService {
             epic.getUserStories().add(userStory);
         }
 
-        return userStoryRepository.save(userStory);
+        UserStory savedUserStory = userStoryRepository.save(userStory);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
-    public UserStory unlinkUserStoryFromEpic(Long userStoryId, Long EpicId) {
+    public UserStoryDTO unlinkUserStoryFromEpic(Long userStoryId, Long EpicId) {
         Optional<UserStory> userStory = userStoryRepository.findById(userStoryId);
         Optional<Epic> epic = epicRepository.findById(EpicId);
         if (userStory.isPresent() && epic.isPresent()) {
@@ -79,26 +90,29 @@ public class UserStoryService {
             Epic ep = epic.get();
             us.setEpic(null);
             ep.getUserStories().remove(us);
-            return userStoryRepository.save(us);
+            UserStory savedUserStory = userStoryRepository.save(us);
+            return userStoryMapper.toDto(savedUserStory);
         }
-        else return null;
+        return null;
     }
 
-    public UserStory setAcceptanceCriteria(Long userStoryId, String criteria) {
+    public UserStoryDTO setAcceptanceCriteria(Long userStoryId, String criteria) {
         UserStory userStory = getUserStoryOrThrow(userStoryId);
         userStory.setAcceptanceCriteria(criteria);
-        return userStoryRepository.save(userStory);
+        UserStory savedUserStory = userStoryRepository.save(userStory);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
-    public UserStory updateUserStoryStatus(Long userStoryId, Status status) {
+    public UserStoryDTO updateUserStoryStatus(Long userStoryId, Status status) {
         UserStory userStory = getUserStoryOrThrow(userStoryId);
         userStory.setStatus(status);
-        return userStoryRepository.save(userStory);
+        UserStory savedUserStory = userStoryRepository.save(userStory);
+        return userStoryMapper.toDto(savedUserStory);
     }
 
 
 
-    public List<UserStory> getPrioritizedUserStories(Long backlogId) {
+    public List<UserStoryDTO> getPrioritizedUserStories(Long backlogId) {
         return productBacklogRepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("Product Backlog non trouvé"))
                 .getUserStories().stream()
@@ -106,17 +120,21 @@ public class UserStoryService {
                         us1.getPriority().getWeight(),
                         us2.getPriority().getWeight()
                 ))
+                .map(userStoryMapper::toDto)
                 .toList();
     }
 
     // ==== Query Methods ====
-    public UserStory getUserStoryById(Long id) {
-        return userStoryRepository.findById(id)
+    public UserStoryDTO getUserStoryById(Long id) {
+        UserStory userStory = userStoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'ID : " + id));
+        return userStoryMapper.toDto(userStory);
     }
 
-    public List<UserStory> getAllUserStories() {
-        return userStoryRepository.findAll();
+    public List<UserStoryDTO> getAllUserStories() {
+        return userStoryRepository.findAll().stream()
+                .map(userStoryMapper::toDto)
+                .toList();
     }
 
     private UserStory getUserStoryOrThrow(Long id) {
@@ -124,12 +142,13 @@ public class UserStoryService {
                 .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'ID : " + id));
     }
 
-    public Task addTaskToUserStory(Long userStoryId, Task task) {
+    public TaskDTO addTaskToUserStory(Long userStoryId, TaskDTO taskDTO) {
         UserStory userStory = getUserStoryOrThrow(userStoryId);
+        Task task = taskMapper.toEntity(taskDTO);
         task.setUserStory(userStory);
         userStory.getTasks().add(task);
         userStoryRepository.save(userStory); // persist cascade
-        return task;
+        return taskMapper.toDto(task);
     }
 
     public void deleteTaskFromUserStory(Long userStoryId, Long taskId) {
@@ -145,16 +164,19 @@ public class UserStoryService {
         taskRepository.delete(task); // suppression explicite
     }
 
-    public Task updateTaskStatus(Long taskId, String newStatus) {
+    public TaskDTO updateTaskStatus(Long taskId, String newStatus) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task non trouvée avec l'ID : " + taskId));
         task.setStatus(newStatus);
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        return taskMapper.toDto(savedTask);
     }
 
-    public List<Task> getTasksForUserStory(Long userStoryId) {
+    public List<TaskDTO> getTasksForUserStory(Long userStoryId) {
         UserStory userStory = getUserStoryOrThrow(userStoryId);
-        return userStory.getTasks();
+        return userStory.getTasks().stream()
+                .map(taskMapper::toDto)
+                .toList();
     }
 
 }

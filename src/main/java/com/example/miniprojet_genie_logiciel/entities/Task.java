@@ -23,6 +23,9 @@ public class Task {
     @Column
     private String status;
 
+    @Column
+    private Integer estimation;
+
     @ManyToOne
     private UserStory userStory;
 }

@@ -1,6 +1,8 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
 import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
 import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,28 +16,36 @@ import java.util.Optional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
 
     // Création d'une Task
-    public Task createTask(Task task) {
-        return taskRepository.save(task);
+    public TaskDTO createTask(TaskDTO taskDTO) {
+        Task task = taskMapper.toEntity(taskDTO);
+        Task savedTask = taskRepository.save(task);
+        return taskMapper.toDto(savedTask);
     }
 
     // Récupération de toutes les Tasks
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    public List<TaskDTO> getAllTasks() {
+        return taskRepository.findAll().stream()
+                .map(taskMapper::toDto)
+                .toList();
     }
 
     // Récupération d'une Task par son id
-    public Optional<Task> getTaskById(Long id) {
-        return taskRepository.findById(id);
+    public Optional<TaskDTO> getTaskById(Long id) {
+        return taskRepository.findById(id)
+                .map(taskMapper::toDto);
     }
 
     // Mise à jour d'une Task (incluant le statut)
-    public Task updateTask(Task task) {
-        if (!taskRepository.existsById(task.getId())) {
-            throw new EntityNotFoundException("Task not found with id: " + task.getId());
+    public TaskDTO updateTask(TaskDTO taskDTO) {
+        if (!taskRepository.existsById(taskDTO.getId())) {
+            throw new EntityNotFoundException("Task not found with id: " + taskDTO.getId());
         }
-        return taskRepository.save(task);
+        Task task = taskMapper.toEntity(taskDTO);
+        Task updatedTask = taskRepository.save(task);
+        return taskMapper.toDto(updatedTask);
     }
 
     // Suppression d'une Task par son id
@@ -47,10 +57,11 @@ public class TaskService {
     }
 
     // Mise à jour du status d'une Task (ex: To Do, In Progress, Done)
-    public Task updateTaskStatus(Long taskId, String status) {
+    public TaskDTO updateTaskStatus(Long taskId, String status) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
         task.setStatus(status);
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        return taskMapper.toDto(updatedTask);
     }
 }

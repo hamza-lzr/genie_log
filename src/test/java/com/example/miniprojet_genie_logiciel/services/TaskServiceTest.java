@@ -1,6 +1,10 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.StatusDTO;
+
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
 import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
 import com.example.miniprojet_genie_logiciel.repository.TaskRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,10 +26,14 @@ class TaskServiceTest {
     @Mock
     private TaskRepository taskRepository;
 
+    @Mock
+    private TaskMapper taskMapper;
+
     @InjectMocks
     private TaskService taskService;
 
     private Task task;
+    private TaskDTO taskDTO;
 
     @BeforeEach
     void setUp() {
@@ -33,60 +41,78 @@ class TaskServiceTest {
         task.setId(1L);
         task.setTitle("Test Task");
         task.setDescription("Test Description");
-        task.setStatus("TO_DO");
+        task.setStatus(StatusDTO.TO_DO.toString());
+
+        taskDTO = new TaskDTO();
+        taskDTO.setId(1L);
+        taskDTO.setTitle("Test Task");
+        taskDTO.setDescription("Test Description");
+        taskDTO.setStatus(StatusDTO.TO_DO);
     }
 
     @Test
     void testCreateTask() {
+        when(taskMapper.toEntity(any(TaskDTO.class))).thenReturn(task);
         when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskMapper.toDto(any(Task.class))).thenReturn(taskDTO);
 
-        Task created = taskService.createTask(task);
+        TaskDTO created = taskService.createTask(taskDTO);
 
         assertNotNull(created);
         assertEquals("Test Task", created.getTitle());
         verify(taskRepository, times(1)).save(any(Task.class));
+        verify(taskMapper, times(1)).toEntity(any(TaskDTO.class));
+        verify(taskMapper, times(1)).toDto(any(Task.class));
     }
 
     @Test
     void testGetAllTasks() {
         when(taskRepository.findAll()).thenReturn(List.of(task));
+        when(taskMapper.toDto(any(Task.class))).thenReturn(taskDTO);
 
-        List<Task> tasks = taskService.getAllTasks();
+        List<TaskDTO> tasks = taskService.getAllTasks();
 
         assertFalse(tasks.isEmpty());
         assertEquals(1, tasks.size());
         assertEquals("Test Task", tasks.get(0).getTitle());
+        verify(taskMapper, times(1)).toDto(any(Task.class));
     }
 
     @Test
     void testGetTaskById() {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskMapper.toDto(any(Task.class))).thenReturn(taskDTO);
 
-        Optional<Task> found = taskService.getTaskById(1L);
+        Optional<TaskDTO> found = taskService.getTaskById(1L);
 
         assertTrue(found.isPresent());
         assertEquals("Test Task", found.get().getTitle());
+        verify(taskMapper, times(1)).toDto(any(Task.class));
     }
 
     @Test
     void testUpdateTask() {
         when(taskRepository.existsById(1L)).thenReturn(true);
+        when(taskMapper.toEntity(any(TaskDTO.class))).thenReturn(task);
         when(taskRepository.save(any(Task.class))).thenReturn(task);
+        when(taskMapper.toDto(any(Task.class))).thenReturn(taskDTO);
 
-        task.setTitle("Updated Task");
-        Task updated = taskService.updateTask(task);
+        taskDTO.setTitle("Updated Task");
+        TaskDTO updated = taskService.updateTask(taskDTO);
 
         assertEquals("Updated Task", updated.getTitle());
         verify(taskRepository, times(1)).save(any(Task.class));
+        verify(taskMapper, times(1)).toEntity(any(TaskDTO.class));
+        verify(taskMapper, times(1)).toDto(any(Task.class));
     }
 
     @Test
     void testUpdateTask_NotFound() {
         when(taskRepository.existsById(1L)).thenReturn(false);
 
-        task.setTitle("Updated Task");
+        taskDTO.setTitle("Updated Task");
         Exception exception = assertThrows(EntityNotFoundException.class,
-                () -> taskService.updateTask(task));
+                () -> taskService.updateTask(taskDTO));
         assertTrue(exception.getMessage().contains("Task not found"));
     }
 
@@ -113,9 +139,9 @@ class TaskServiceTest {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
 
-        Task updatedTask = taskService.updateTaskStatus(1L, "IN_PROGRESS");
+        TaskDTO updatedTask = taskService.updateTaskStatus(1L, StatusDTO.IN_PROGRESS.toString());
 
-        assertEquals("IN_PROGRESS", updatedTask.getStatus());
+        assertEquals(StatusDTO.IN_PROGRESS, updatedTask.getStatus());
         verify(taskRepository, times(1)).save(any(Task.class));
     }
 
@@ -124,7 +150,7 @@ class TaskServiceTest {
         when(taskRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(EntityNotFoundException.class,
-                () -> taskService.updateTaskStatus(1L, "IN_PROGRESS"));
+                () -> taskService.updateTaskStatus(1L, StatusDTO.IN_PROGRESS.toString()));
         assertTrue(exception.getMessage().contains("Task not found"));
     }
 }

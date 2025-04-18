@@ -28,6 +28,9 @@ public class UserStory {
     private String goal;
 
     @Column
+    private Integer storyPoints;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private Status status;
 

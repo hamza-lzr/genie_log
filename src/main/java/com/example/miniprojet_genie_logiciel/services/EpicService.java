@@ -1,7 +1,11 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.EpicDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.Epic;
 import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.mapper.EpicMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -16,25 +20,35 @@ import java.util.Optional;
 public class EpicService {
 
     private final EpicRepository epicRepository;
+    private final EpicMapper epicMapper;
+    private final UserStoryMapper userStoryMapper;
 
     // Création d'un Epic
-    public Epic createEpic(Epic epic) {
-        return epicRepository.save(epic);
+    public EpicDTO createEpic(EpicDTO epicDTO) {
+        Epic epic = epicMapper.toEntity(epicDTO);
+        Epic savedEpic = epicRepository.save(epic);
+        return epicMapper.toDto(savedEpic);
     }
 
     // Récupération de tous les Epics
-    public List<Epic> getAllEpics() {
-        return epicRepository.findAll();
+    public List<EpicDTO> getAllEpics() {
+        List<Epic> epics = epicRepository.findAll();
+        return epics.stream()
+                .map(epicMapper::toDto)
+                .toList();
     }
 
     // Récupération d'un Epic par son id
-    public Optional<Epic> getEpicById(Long id) {
-        return epicRepository.findById(id);
+    public Optional<EpicDTO> getEpicById(Long id) {
+        return epicRepository.findById(id)
+                .map(epicMapper::toDto);
     }
 
     // Mise à jour d'un Epic
-    public Epic updateEpic(Epic epic) {
-        return epicRepository.save(epic);
+    public EpicDTO updateEpic(EpicDTO epicDTO) {
+        Epic epic = epicMapper.toEntity(epicDTO);
+        Epic updatedEpic = epicRepository.save(epic);
+        return epicMapper.toDto(updatedEpic);
     }
 
     // Suppression d'un Epic
@@ -43,22 +57,25 @@ public class EpicService {
     }
 
     // Lien d'une User Story à un Epic
-    public Epic addUserStoryToEpic(Long epicId, UserStory userStory) {
+    public EpicDTO addUserStoryToEpic(Long epicId, UserStoryDTO userStoryDTO) {
         Epic epic = epicRepository.findById(epicId)
                 .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
         if (epic.getUserStories() == null) {
             epic.setUserStories(new ArrayList<>());
         }
+        UserStory userStory = userStoryMapper.toEntity(userStoryDTO);
         epic.getUserStories().add(userStory);
-        // Optionnel : lier l'Epic à la User Story
         userStory.setEpic(epic);
-        return epicRepository.save(epic);
+        Epic savedEpic = epicRepository.save(epic);
+        return epicMapper.toDto(savedEpic);
     }
 
     // Visualisation des User Stories liées à un Epic
-    public List<UserStory> getUserStoriesByEpic(Long epicId) {
+    public List<UserStoryDTO> getUserStoriesByEpic(Long epicId) {
         Epic epic = epicRepository.findById(epicId)
                 .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
-        return epic.getUserStories();
+        return epic.getUserStories().stream()
+                .map(userStoryMapper::toDto)
+                .toList();
     }
 }

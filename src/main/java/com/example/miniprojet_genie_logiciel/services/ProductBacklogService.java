@@ -1,6 +1,10 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.*;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.EpicMapper;
+import com.example.miniprojet_genie_logiciel.mapper.ProductBacklogMapper;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.repository.EpicRepository;
 import com.example.miniprojet_genie_logiciel.repository.ProductBacklogRepository;
 import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
@@ -20,97 +24,110 @@ public class ProductBacklogService {
     private final ProductBacklogRepository productbacklogrepository;
     private final EpicRepository epicRepository;
     private final UserStoryRepository userStoryRepository;
+    private final ProductBacklogMapper productBacklogMapper;
+    private final EpicMapper epicMapper;
+    private final UserStoryMapper userStoryMapper;
 
-    public ProductBacklog saveProductBacklog(ProductBacklog productbacklog) {
-        return productbacklogrepository.save(productbacklog);
+    public ProductBacklogDTO saveProductBacklog(ProductBacklogDTO productBacklogDTO) {
+        ProductBacklog productBacklog = productBacklogMapper.toEntity(productBacklogDTO);
+        ProductBacklog savedProductBacklog = productbacklogrepository.save(productBacklog);
+        return productBacklogMapper.toDto(savedProductBacklog);
     }
 
-    public List<ProductBacklog> findAll() {
-        return productbacklogrepository.findAll();
+    public List<ProductBacklogDTO> findAll() {
+        List<ProductBacklog> productBacklogs = productbacklogrepository.findAll();
+        return productBacklogs.stream()
+                .map(productBacklogMapper::toDto)
+                .toList();
     }
 
-    public Optional<ProductBacklog> findById(Long id) {
-        return productbacklogrepository.findById(id);
+    public Optional<ProductBacklogDTO> findById(Long id) {
+        return productbacklogrepository.findById(id)
+                .map(productBacklogMapper::toDto);
     }
 
     public void deleteById(Long id) {
         productbacklogrepository.deleteById(id);
     }
 
-    public ProductBacklog updateProductBacklog(ProductBacklog Oldproductbacklog, Long backlogId) {
+    public ProductBacklogDTO updateProductBacklog(ProductBacklogDTO oldProductBacklogDTO, Long backlogId) {
         Optional<ProductBacklog> PBToUpdate = productbacklogrepository.findById(backlogId);
         if (PBToUpdate.isPresent()) {
             ProductBacklog PBToUpdateObj = PBToUpdate.get();
-            PBToUpdateObj.setName(Oldproductbacklog.getName());
-
+            PBToUpdateObj.setName(oldProductBacklogDTO.getName());
+            ProductBacklog savedProductBacklog = productbacklogrepository.save(PBToUpdateObj);
+            return productBacklogMapper.toDto(savedProductBacklog);
         }
-
-        return productbacklogrepository.save(Oldproductbacklog);
+        throw new EntityNotFoundException("ProductBacklog not found with id: " + backlogId);
     }
 
     // Ajout d'un Epic au ProductBacklog
-    public ProductBacklog addEpicToProductBacklog(Long backlogId, Long epicId) {
+    public ProductBacklogDTO addEpicToProductBacklog(Long backlogId, Long epicId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
         Epic ep = epicRepository.findById(epicId)
                         .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
 
         pb.getEpics().add(ep);
-
-        return productbacklogrepository.save(pb);
+        ProductBacklog savedPb = productbacklogrepository.save(pb);
+        return productBacklogMapper.toDto(savedPb);
     }
 
     // Suppression d'un Epic du ProductBacklog
-    public ProductBacklog removeEpicFromProductBacklog(Long backlogId, Long epicId) {
+    public ProductBacklogDTO removeEpicFromProductBacklog(Long backlogId, Long epicId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
         Epic ep = epicRepository.findById(epicId)
                 .orElseThrow(() -> new EntityNotFoundException("Epic not found with id: " + epicId));
         pb.getEpics().remove(ep);
-        return productbacklogrepository.save(pb);
+        ProductBacklog savedPb = productbacklogrepository.save(pb);
+        return productBacklogMapper.toDto(savedPb);
     }
 
     // Ajout d'une UserStory au ProductBacklog
-    public ProductBacklog addUserStoryToProductBacklog(Long backlogId, Long userStoryId) {
+    public ProductBacklogDTO addUserStoryToProductBacklog(Long backlogId, Long userStoryId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
         UserStory us = userStoryRepository.findById(userStoryId)
                 .orElseThrow(() -> new EntityNotFoundException(" User Story not found with id: "+ userStoryId));
         pb.getUserStories().add(us);
         us.setProductBacklog(pb);
-        return productbacklogrepository.save(pb);
+        ProductBacklog savedPb = productbacklogrepository.save(pb);
+        return productBacklogMapper.toDto(savedPb);
     }
 
 
     // Suppression d'une UserStory du ProductBacklog
-    public ProductBacklog removeUserStoryFromProductBacklog(Long backlogId, Long userStoryId) {
+    public ProductBacklogDTO removeUserStoryFromProductBacklog(Long backlogId, Long userStoryId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
         UserStory us = userStoryRepository.findById(userStoryId)
                         .orElseThrow(() -> new EntityNotFoundException(" User Story not found with id: "+ userStoryId));
         pb.getUserStories().remove(us);
-        return productbacklogrepository.save(pb);
+        ProductBacklog savedPb = productbacklogrepository.save(pb);
+        return productBacklogMapper.toDto(savedPb);
     }
     //classer les User Stories par ordre de priorite
-    public List<UserStory> prioritizeUserStoriesMoscow(Long backlogId) {
+    public List<UserStoryDTO> prioritizeUserStoriesMoscow(Long backlogId) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
 
         return pb.getUserStories().stream()
                 .sorted(Comparator.comparingInt((UserStory us) -> us.getPriority().getWeight()).reversed())
+                .map(userStoryMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    public List<UserStory> filterUserStories(Long backlogId,
-                                             Status statusFilter,
-                                             Priority priorityFilter,
+    public List<UserStoryDTO> filterUserStories(Long backlogId,
+                                             StatusDTO statusFilter,
+                                             PriorityDTO priorityFilter,
                                              String keyword) {
         ProductBacklog pb = productbacklogrepository.findById(backlogId)
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog not found with id: " + backlogId));
 
         return pb.getUserStories().stream()
-                .filter(us -> statusFilter == null || us.getStatus() == statusFilter)
-                .filter(us -> priorityFilter == null || us.getPriority() == priorityFilter)
+                .filter(us -> statusFilter == null || us.getStatus().toString().equals(statusFilter.toString()))
+                .filter(us -> priorityFilter == null || us.getPriority().getLabel().equals(priorityFilter.getName()))
                 .filter(us -> keyword == null || keyword.isBlank()
                         || us.getTitle().toLowerCase().contains(keyword.toLowerCase())
                         || us.getAcceptanceCriteria().toLowerCase().contains(keyword.toLowerCase())
@@ -118,6 +135,7 @@ public class ProductBacklogService {
                         || us.getRole().toLowerCase().contains(keyword.toLowerCase())
                         || us.getGoal().toLowerCase().contains(keyword.toLowerCase())
                 )
+                .map(userStoryMapper::toDto)
                 .collect(Collectors.toList());
     }
 

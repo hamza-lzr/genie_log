@@ -1,9 +1,9 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
-import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
-import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.dto.SprintBacklogDTO;
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.services.SprintBacklogService;
+import com.example.miniprojet_genie_logiciel.mapper.SprintBacklogMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,33 +18,33 @@ import java.util.List;
 public class SprintBacklogController {
 
     private final SprintBacklogService sprintBacklogService;
+    private final SprintBacklogMapper sprintBacklogMapper;
 
 
     @GetMapping
-    public ResponseEntity<List<SprintBacklog>> getAllSprints() {
-        List<SprintBacklog> sprints = sprintBacklogService.findAllSprints();
+    public ResponseEntity<List<SprintBacklogDTO>> getAllSprints() {
+        List<SprintBacklogDTO> sprints = sprintBacklogService.findAllSprints();
         return ResponseEntity.ok(sprints);
     }
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<SprintBacklog> getSprintById(@PathVariable Long id) {
+    public ResponseEntity<SprintBacklogDTO> getSprintById(@PathVariable Long id) {
         return ResponseEntity.ok(sprintBacklogService.findSprintById(id));
-
     }
 
     // Création d'un SprintBacklog à partir d'un objet complet
     @PostMapping
-    public ResponseEntity<SprintBacklog> createSprintBacklog(@RequestBody SprintBacklog sprintBacklog) {
-
+    public ResponseEntity<SprintBacklogDTO> createSprintBacklog(@RequestBody SprintBacklogDTO sprintBacklogDTO) {
+        SprintBacklogDTO created = sprintBacklogService.createSprint(sprintBacklogDTO.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(sprintBacklog);
+                .body(created);
     }
 
     // Création d'un nouveau Sprint en spécifiant son nom
     @PostMapping("/create")
-    public ResponseEntity<SprintBacklog> createSprint(@RequestParam String name) {
-        SprintBacklog created = sprintBacklogService.createSprint(name);
+    public ResponseEntity<SprintBacklogDTO> createSprint(@RequestParam String name) {
+        SprintBacklogDTO created = sprintBacklogService.createSprint(name);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -61,19 +61,18 @@ public class SprintBacklogController {
 
     // Ajout d'une User Story à un Sprint
     @PostMapping("/{sprintId}/userstories/{usId}")
-    public ResponseEntity<String> addUserStoryToSprint(@PathVariable Long sprintId,
+    public ResponseEntity<SprintBacklogDTO> addUserStoryToSprint(@PathVariable Long sprintId,
                                                               @PathVariable Long usId) {
-            return ResponseEntity.ok(sprintBacklogService.addUserStoryToSprint(sprintId, usId));
-
+            SprintBacklogDTO updated = sprintBacklogService.addUserStoryToSprint(sprintId, usId);
+            return ResponseEntity.ok(updated);
     }
 
     // Suppression d'une User Story d'un Sprint
     @DeleteMapping("/{sprintId}/userstories/{usId}")
-    public ResponseEntity<String> removeUserStoryFromSprint(@PathVariable Long sprintId,
+    public ResponseEntity<Void> removeUserStoryFromSprint(@PathVariable Long sprintId,
                                                                    @PathVariable Long usId) {
            sprintBacklogService.removeUserStoryFromSprint(sprintId, usId);
            return ResponseEntity.noContent().build();
-
     }
 
 }

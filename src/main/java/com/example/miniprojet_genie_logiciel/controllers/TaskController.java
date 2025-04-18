@@ -1,6 +1,8 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
 import com.example.miniprojet_genie_logiciel.entities.Task;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
 import com.example.miniprojet_genie_logiciel.services.TaskService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -16,17 +18,18 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final TaskMapper taskMapper;
 
     // Récupérer toutes les Tasks
     @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
-        List<Task> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
+    public ResponseEntity<List<TaskDTO>> getAllTasks() {
+        List<TaskDTO> taskDTOs = taskService.getAllTasks();
+        return ResponseEntity.ok(taskDTOs);
     }
 
     // Récupérer une Task par son id
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
+    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
         return taskService.getTaskById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -34,17 +37,17 @@ public class TaskController {
 
     // Créer une nouvelle Task
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        Task created = taskService.createTask(task);
+    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
+        TaskDTO created = taskService.createTask(taskDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     // Mettre à jour une Task (incluant le statut)
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task) {
-        task.setId(id);
+    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody TaskDTO taskDTO) {
+        taskDTO.setId(id);
         try {
-            Task updated = taskService.updateTask(task);
+            TaskDTO updated = taskService.updateTask(taskDTO);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -64,10 +67,10 @@ public class TaskController {
 
     // Mettre à jour le status d'une Task (ex: To Do, In Progress, Done)
     @PutMapping("/{id}/status")
-    public ResponseEntity<Task> updateTaskStatus(@PathVariable Long id,
+    public ResponseEntity<TaskDTO> updateTaskStatus(@PathVariable Long id,
                                                  @RequestParam String status) {
         try {
-            Task updated = taskService.updateTaskStatus(id, status);
+            TaskDTO updated = taskService.updateTaskStatus(id, status);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();

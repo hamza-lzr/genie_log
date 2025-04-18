@@ -1,7 +1,10 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
+import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
 import com.example.miniprojet_genie_logiciel.entities.*;
+import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
 import com.example.miniprojet_genie_logiciel.services.UserStoryService;
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,68 +19,78 @@ import java.util.List;
 public class UserStoryController {
 
     private final UserStoryService userStoryService;
+    private final UserStoryMapper userStoryMapper;
 
     @PostMapping
-    public ResponseEntity<UserStory> createUserStory(@Valid @RequestBody UserStory userStory) {
+    public ResponseEntity<UserStoryDTO> createUserStory(@Valid @RequestBody UserStoryDTO userStoryDTO) {
+        UserStoryDTO created = userStoryService.addUserStory(userStoryDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userStoryService.addUserStory(userStory));
+                .body(created);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserStory> getUserStoryById(@PathVariable Long id) {
-        return ResponseEntity.ok(userStoryService.getUserStoryById(id));
+    public ResponseEntity<UserStoryDTO> getUserStoryById(@PathVariable Long id) {
+        UserStoryDTO userStoryDTO = userStoryService.getUserStoryById(id);
+        return ResponseEntity.ok(userStoryDTO);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserStory>> getAllUserStories() {
-        return ResponseEntity.ok(userStoryService.getAllUserStories());
+    public ResponseEntity<List<UserStoryDTO>> getAllUserStories() {
+        List<UserStoryDTO> userStoryDTOs = userStoryService.getAllUserStories();
+        return ResponseEntity.ok(userStoryDTOs);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserStory> updateUserStory(
+    public ResponseEntity<UserStoryDTO> updateUserStory(
             @PathVariable Long id,
-            @Valid @RequestBody UserStory userStory
+            @Valid @RequestBody UserStoryDTO userStoryDTO
     ) {
-        return ResponseEntity.ok(userStoryService.updateUserStory(id, userStory));
+        UserStoryDTO updated = userStoryService.updateUserStory(id, userStoryDTO);
+        return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/link-epic/{usId}/{epId}")
-    public ResponseEntity<UserStory> linkToEpic(
+    public ResponseEntity<UserStoryDTO> linkToEpic(
             @PathVariable Long usId,
             @PathVariable Long epId
     ) {
-        return ResponseEntity.ok(userStoryService.linkUserStoryToEpic(usId, epId));
+        UserStoryDTO userStoryDTO = userStoryService.linkUserStoryToEpic(usId, epId);
+        return ResponseEntity.ok(userStoryDTO);
     }
 
     @PostMapping("/unlink-epic/{usId}/{epId}")
-    public ResponseEntity<UserStory> unlinkToEpic(
+    public ResponseEntity<UserStoryDTO> unlinkToEpic(
             @PathVariable Long usId,
             @PathVariable Long epId
     ){
-        return ResponseEntity.ok(userStoryService.unlinkUserStoryFromEpic(usId, epId));
+        UserStoryDTO userStoryDTO = userStoryService.unlinkUserStoryFromEpic(usId, epId);
+        return ResponseEntity.ok(userStoryDTO);
     }
 
     @PatchMapping("/{id}/acceptance-criteria")
-    public ResponseEntity<UserStory> setAcceptanceCriteria(
+    public ResponseEntity<UserStoryDTO> setAcceptanceCriteria(
             @PathVariable Long id,
             @RequestParam String criteria
     ) {
-        return ResponseEntity.ok(userStoryService.setAcceptanceCriteria(id, criteria));
+        UserStoryDTO userStoryDTO = userStoryService.setAcceptanceCriteria(id, criteria);
+        return ResponseEntity.ok(userStoryDTO);
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<UserStory> updateStatus(
+    public ResponseEntity<UserStoryDTO> updateStatus(
             @PathVariable Long id,
             @RequestParam Status status
     ) {
-        return ResponseEntity.ok(userStoryService.updateUserStoryStatus(id, status));
+        UserStoryDTO userStoryDTO = userStoryService.updateUserStoryStatus(id, status);
+        return ResponseEntity.ok(userStoryDTO);
     }
 
 
 
     @GetMapping("/product-backlogs/{backlogId}/prioritized")
-    public ResponseEntity<List<UserStory>> getPrioritizedStories(@PathVariable Long backlogId) {
-        return ResponseEntity.ok(userStoryService.getPrioritizedUserStories(backlogId));
+    public ResponseEntity<List<UserStoryDTO>> getPrioritizedStories(@PathVariable Long backlogId) {
+        List<UserStoryDTO> userStoryDTOs = userStoryService.getPrioritizedUserStories(backlogId);
+        return ResponseEntity.ok(userStoryDTOs);
     }
 
     // ==== Suppression ====
@@ -88,23 +101,22 @@ public class UserStoryController {
     }
 
     @PutMapping("{id}/status")
-    public ResponseEntity<UserStory> updateUserStoryStatus(@PathVariable Long id, @RequestParam Status status) {
+    public ResponseEntity<UserStoryDTO> updateUserStoryStatus(@PathVariable Long id, @RequestParam Status status) {
         return ResponseEntity.ok(userStoryService.updateUserStoryStatus(id, status));
     }
 
     @PutMapping("/{id}/priority")
-    public ResponseEntity<UserStory> updateUserStoryPriority(@PathVariable Long id, @RequestParam Priority priority) {
+    public ResponseEntity<UserStoryDTO> updateUserStoryPriority(@PathVariable Long id, @RequestParam Priority priority) {
         return ResponseEntity.ok(userStoryService.updateUserStoryPriority(id, priority));
-
     }
 
     //Tasks
     @PostMapping("/{userStoryId}/tasks")
-    public ResponseEntity<Task> addTaskToUserStory(
+    public ResponseEntity<TaskDTO> addTaskToUserStory(
             @PathVariable Long userStoryId,
-            @Valid @RequestBody Task task
+            @Valid @RequestBody TaskDTO taskDTO
     ) {
-        Task createdTask = userStoryService.addTaskToUserStory(userStoryId, task);
+        TaskDTO createdTask = userStoryService.addTaskToUserStory(userStoryId, taskDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
@@ -118,16 +130,16 @@ public class UserStoryController {
     }
 
     @PatchMapping("/tasks/{taskId}/status")
-    public ResponseEntity<Task> updateTaskStatus(
+    public ResponseEntity<TaskDTO> updateTaskStatus(
             @PathVariable Long taskId,
             @RequestParam String status
     ) {
-        Task updatedTask = userStoryService.updateTaskStatus(taskId, status);
+        TaskDTO updatedTask = userStoryService.updateTaskStatus(taskId, status);
         return ResponseEntity.ok(updatedTask);
     }
 
     @GetMapping("/{userStoryId}/tasks")
-    public ResponseEntity<List<Task>> getTasksForUserStory(@PathVariable Long userStoryId) {
+    public ResponseEntity<List<TaskDTO>> getTasksForUserStory(@PathVariable Long userStoryId) {
         return ResponseEntity.ok(userStoryService.getTasksForUserStory(userStoryId));
     }
 
