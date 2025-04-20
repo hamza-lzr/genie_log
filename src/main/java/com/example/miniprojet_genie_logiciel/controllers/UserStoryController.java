@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class UserStoryController {
     private final UserStoryService userStoryService;
     private final UserStoryMapper userStoryMapper;
 
+    @PreAuthorize("hasRole('PRODUCT_OWNER') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<UserStoryDTO> createUserStory(@Valid @RequestBody UserStoryDTO userStoryDTO) {
         UserStoryDTO created = userStoryService.addUserStory(userStoryDTO);
@@ -28,18 +30,21 @@ public class UserStoryController {
                 .body(created);
     }
 
+    @PreAuthorize("hasAnyRole('PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<UserStoryDTO> getUserStoryById(@PathVariable Long id) {
         UserStoryDTO userStoryDTO = userStoryService.getUserStoryById(id);
         return ResponseEntity.ok(userStoryDTO);
     }
 
+    @PreAuthorize("hasAnyRole('PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserStoryDTO>> getAllUserStories() {
         List<UserStoryDTO> userStoryDTOs = userStoryService.getAllUserStories();
         return ResponseEntity.ok(userStoryDTOs);
     }
 
+    @PreAuthorize("hasRole('PRODUCT_OWNER') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<UserStoryDTO> updateUserStory(
             @PathVariable Long id,
@@ -48,6 +53,7 @@ public class UserStoryController {
         UserStoryDTO updated = userStoryService.updateUserStory(id, userStoryDTO);
         return ResponseEntity.ok(updated);
     }
+
 
     @PostMapping("/link-epic/{usId}/{epId}")
     public ResponseEntity<UserStoryDTO> linkToEpic(

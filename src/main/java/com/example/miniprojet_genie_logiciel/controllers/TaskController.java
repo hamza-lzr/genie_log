@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,7 @@ public class TaskController {
     }
 
     // Créer une nouvelle Task
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
         TaskDTO created = taskService.createTask(taskDTO);
@@ -43,6 +45,7 @@ public class TaskController {
     }
 
     // Mettre à jour une Task (incluant le statut)
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody TaskDTO taskDTO) {
         taskDTO.setId(id);
@@ -55,6 +58,7 @@ public class TaskController {
     }
 
     // Supprimer une Task par son id
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         try {
@@ -66,6 +70,7 @@ public class TaskController {
     }
 
     // Mettre à jour le status d'une Task (ex: To Do, In Progress, Done)
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @PutMapping("/{id}/status")
     public ResponseEntity<TaskDTO> updateTaskStatus(@PathVariable Long id,
                                                  @RequestParam String status) {
