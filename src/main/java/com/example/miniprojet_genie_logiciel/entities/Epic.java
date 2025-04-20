@@ -21,6 +21,10 @@ public class Epic {
     @JsonIgnore
     @OneToMany(mappedBy = "epic")
     private List<UserStory> userStories;
+
+    @JsonIgnore
+    @ManyToOne
+    private ProductBacklog productBacklog;
 }
 
 

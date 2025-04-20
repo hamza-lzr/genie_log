@@ -27,7 +27,7 @@ public class ProductBacklogMapper {
         if (productBacklog.getProject() != null) {
             ProjectDTO projectDTO = new ProjectDTO();
             projectDTO.setId(productBacklog.getProject().getId());
-            projectDTO.setName(productBacklog.getProject().getTitle());
+            projectDTO.setName(productBacklog.getProject().getName());
             dto.setProject(projectDTO);
         }
 
@@ -54,7 +54,7 @@ public class ProductBacklogMapper {
         if (dto.getProject() != null) {
             Project project = new Project();
             project.setId(dto.getProject().getId());
-            project.setTitle(dto.getProject().getName());
+            project.setName(dto.getProject().getName());
             productBacklog.setProject(project);
         }
 

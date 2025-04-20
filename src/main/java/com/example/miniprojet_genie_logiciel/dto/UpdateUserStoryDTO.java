@@ -5,15 +5,12 @@ import com.example.miniprojet_genie_logiciel.entities.Status;
 import lombok.Data;
 
 @Data
-public class UserStoryDTO {
-    private Long id;
+public class UpdateUserStoryDTO {
     private String title;
     private Integer storyPoints;
     private Status status;
     private Priority priority;
     private String acceptanceCriteria;
-    private Long epicId;
-    private Long productBacklogId;
-    private Long sprintBacklogId;
+    private Long sprintBacklogId; // optionnel si assignation plus tard
 }
 

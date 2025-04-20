@@ -7,12 +7,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class SprintBacklogDTO {
-    private Long id;
+public class UpdateSprintBacklogDTO {
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;
     private Status status;
-    private Long projectId;
-    private List<UserStoryDTO> userStories;
+    private List<Long> userStoryIds; // pour ajouter ou retirer des user stories dans le sprint
 }

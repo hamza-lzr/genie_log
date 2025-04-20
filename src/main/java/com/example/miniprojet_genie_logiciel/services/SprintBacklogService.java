@@ -1,98 +1,104 @@
 package com.example.miniprojet_genie_logiciel.services;
 
+import com.example.miniprojet_genie_logiciel.dto.CreateSprintBacklogDTO;
 import com.example.miniprojet_genie_logiciel.dto.SprintBacklogDTO;
-import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
-import com.example.miniprojet_genie_logiciel.entities.SprintBacklog;
-import com.example.miniprojet_genie_logiciel.entities.UserStory;
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
+import com.example.miniprojet_genie_logiciel.entities.*;
 import com.example.miniprojet_genie_logiciel.mapper.SprintBacklogMapper;
-import com.example.miniprojet_genie_logiciel.mapper.UserStoryMapper;
-import com.example.miniprojet_genie_logiciel.repository.SprintBacklogRepository;
-import com.example.miniprojet_genie_logiciel.repository.UserStoryRepository;
+import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
+import com.example.miniprojet_genie_logiciel.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
-@Transactional
 @Service
 @RequiredArgsConstructor
 public class SprintBacklogService {
 
-    private final SprintBacklogRepository sprintBacklogRepository;
-    private final UserStoryRepository userStoryRepository;
-    private final SprintBacklogMapper sprintBacklogMapper;
-    private final UserStoryMapper userStoryMapper;
+    private final SprintBacklogRepository sprintRepo;
+    private final ProjectRepository projectRepo;
+    private final UserStoryRepository userStoryRepo;
+    private final TaskRepository taskRepo;
 
-    // Créer un nouveau sprint vide
-    public SprintBacklogDTO createSprint(String name) {
-        SprintBacklog sprint = new SprintBacklog();
-        sprint.setName(name);
-        sprint.setUserStories(List.of()); // initialise à liste vide
-        SprintBacklog savedSprint = sprintBacklogRepository.save(sprint);
-        return sprintBacklogMapper.toDto(savedSprint);
+    private final SprintBacklogMapper sprintMapper;
+    private final TaskMapper taskMapper;
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public SprintBacklogDTO createSprint(CreateSprintBacklogDTO dto) {
+        Project project = projectRepo.findById(dto.getProjectId())
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + dto.getProjectId()));
+
+        SprintBacklog sprint = sprintMapper.toEntity(dto);
+        sprint.setProject(project);
+
+        SprintBacklog saved = sprintRepo.save(sprint);
+        return sprintMapper.toDto(saved);
     }
 
-    // Ajouter une User Story à un sprint
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public void deleteSprint(Long id) {
+        if (!sprintRepo.existsById(id)) {
+            throw new EntityNotFoundException("Sprint not found with id: " + id);
+        }
+        sprintRepo.deleteById(id);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public List<SprintBacklogDTO> getAllSprints() {
+        return sprintRepo.findAll().stream()
+                .map(sprintMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public SprintBacklogDTO getSprintById(Long id) {
+        SprintBacklog sprint = sprintRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + id));
+        return sprintMapper.toDto(sprint);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
     public SprintBacklogDTO addUserStoryToSprint(Long sprintId, Long userStoryId) {
-        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
-        UserStory userStory = userStoryRepository.findById(userStoryId)
-                .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'id : " + userStoryId));
+        SprintBacklog sprint = sprintRepo.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
 
-        // Optionnel : empêcher l’ajout si déjà assignée
-        if (userStory.getSprintBacklog() != null) {
-            throw new IllegalStateException("La User Story est déjà assignée à un sprint.");
-        }
+        UserStory us = userStoryRepo.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException("UserStory not found with id: " + userStoryId));
 
-        // Lier et sauvegarder
-        userStory.setSprintBacklog(sprint);
-        sprint.getUserStories().add(userStory);
+        sprint.getUserStories().add(us);
+        us.setSprintBacklog(sprint);
 
-        SprintBacklog savedSprint = sprintBacklogRepository.save(sprint);
-        return sprintBacklogMapper.toDto(savedSprint);
+        SprintBacklog updated = sprintRepo.save(sprint);
+        return sprintMapper.toDto(updated);
     }
 
-    // Retirer une User Story d'un Sprint
-    public void removeUserStoryFromSprint(Long sprintId, Long userStoryId) {
-        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
-        UserStory userStory = userStoryRepository.findById(userStoryId)
-                .orElseThrow(() -> new EntityNotFoundException("User Story non trouvée avec l'id : " + userStoryId));
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public SprintBacklogDTO removeUserStoryFromSprint(Long sprintId, Long userStoryId) {
+        SprintBacklog sprint = sprintRepo.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
 
-        if (!sprint.getUserStories().contains(userStory)) {
-            throw new IllegalArgumentException("La User Story n'est pas présente dans ce sprint.");
-        }
+        UserStory us = userStoryRepo.findById(userStoryId)
+                .orElseThrow(() -> new EntityNotFoundException("UserStory not found with id: " + userStoryId));
 
-        sprint.getUserStories().remove(userStory);
-        userStory.setSprintBacklog(null); // désassigner
+        sprint.getUserStories().remove(us);
+        us.setSprintBacklog(null);
+
+        SprintBacklog updated = sprintRepo.save(sprint);
+        return sprintMapper.toDto(updated);
     }
 
-    // Récupérer tous les sprints
-    public List<SprintBacklogDTO> findAllSprints() {
-        return sprintBacklogRepository.findAll().stream()
-                .map(sprintBacklogMapper::toDto)
-                .toList();
-    }
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public List<TaskDTO> getAllTasksInSprint(Long sprintId) {
+        SprintBacklog sprint = sprintRepo.findById(sprintId)
+                .orElseThrow(() -> new EntityNotFoundException("Sprint not found with id: " + sprintId));
 
-    // Récupérer un sprint par ID
-    public SprintBacklogDTO findSprintById(Long sprintId) {
-        SprintBacklog sprint = sprintBacklogRepository.findById(sprintId)
-                .orElseThrow(() -> new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId));
-        return sprintBacklogMapper.toDto(sprint);
+        return sprint.getUserStories().stream()
+                .flatMap(us -> us.getTasks().stream())
+                .map(taskMapper::toDto)
+                .collect(Collectors.toList());
     }
-
-    // Supprimer un sprint par ID
-    public void deleteSprintById(Long sprintId) {
-        if (!sprintBacklogRepository.existsById(sprintId)) {
-            throw new EntityNotFoundException("Sprint non trouvé avec l'id : " + sprintId);
-        }
-        sprintBacklogRepository.deleteById(sprintId);
-    }
-
 }
-
-
-

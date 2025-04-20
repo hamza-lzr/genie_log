@@ -1,13 +1,11 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
+import com.example.miniprojet_genie_logiciel.dto.CreateEpicDTO;
 import com.example.miniprojet_genie_logiciel.dto.EpicDTO;
-import com.example.miniprojet_genie_logiciel.dto.UserStoryDTO;
-import com.example.miniprojet_genie_logiciel.entities.Epic;
-import com.example.miniprojet_genie_logiciel.mapper.EpicMapper;
+import com.example.miniprojet_genie_logiciel.dto.UpdateEpicDTO;
 import com.example.miniprojet_genie_logiciel.services.EpicService;
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,71 +18,43 @@ import java.util.List;
 public class EpicController {
 
     private final EpicService epicService;
-    private final EpicMapper epicMapper;
 
-    // Récupérer tous les epics
-    @GetMapping
-    public ResponseEntity<List<EpicDTO>> getAllEpics() {
-        List<EpicDTO> epicDTOs = epicService.getAllEpics();
-        return ResponseEntity.ok(epicDTOs);
-    }
-
-    // Récupérer un epic par son id
-    @GetMapping("/{id}")
-    public ResponseEntity<EpicDTO> getEpicById(@PathVariable Long id) {
-        return epicService.getEpicById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // Créer un nouvel epic
-    @PreAuthorize("hasRole('PRODUCT_OWNER') or hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<EpicDTO> createEpic(@RequestBody EpicDTO epicDTO) {
-        EpicDTO created = epicService.createEpic(epicDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PRODUCT_OWNER')")
+    public ResponseEntity<EpicDTO> createEpic(@Valid @RequestBody CreateEpicDTO dto) {
+        return ResponseEntity.ok(epicService.createEpic(dto));
     }
 
-    // Mettre à jour un epic existant
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<List<EpicDTO>> getAllEpics() {
+        return ResponseEntity.ok(epicService.getAllEpics());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<EpicDTO> getEpicById(@PathVariable Long id) {
+        return ResponseEntity.ok(epicService.getEpicById(id));
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<EpicDTO> updateEpic(@PathVariable Long id, @RequestBody EpicDTO epicDTO) {
-        epicDTO.setId(id);
-        EpicDTO updated = epicService.updateEpic(epicDTO);
-        return ResponseEntity.ok(updated);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PRODUCT_OWNER')")
+    public ResponseEntity<EpicDTO> updateEpic(@PathVariable Long id, @Valid @RequestBody UpdateEpicDTO dto) {
+        return ResponseEntity.ok(epicService.updateEpic(id, dto));
     }
 
-    // Supprimer un epic
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PRODUCT_OWNER')")
     public ResponseEntity<Void> deleteEpic(@PathVariable Long id) {
-        try {
-            epicService.deleteEpic(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        epicService.deleteEpic(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // Lier une User Story à un epic
-    @PostMapping("/{epicId}/userstories")
-    public ResponseEntity<EpicDTO> addUserStoryToEpic(@PathVariable Long epicId,
-                                                   @RequestBody UserStoryDTO userStory) {
-        try {
-            EpicDTO updated = epicService.addUserStoryToEpic(epicId, userStory);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Visualiser les User Stories liées à un epic
-    @GetMapping("/{epicId}/userstories")
-    public ResponseEntity<List<UserStoryDTO>> getUserStoriesByEpic(@PathVariable Long epicId) {
-        try {
-            List<UserStoryDTO> userStories = epicService.getUserStoriesByEpic(epicId);
-            return ResponseEntity.ok(userStories);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @GetMapping("/by-backlog/{backlogId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public ResponseEntity<List<EpicDTO>> getEpicsByBacklog(@PathVariable Long backlogId) {
+        return ResponseEntity.ok(epicService.getEpicsByBacklogId(backlogId));
     }
 }
+
 

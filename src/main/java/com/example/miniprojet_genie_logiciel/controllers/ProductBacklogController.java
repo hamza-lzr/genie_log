@@ -1,131 +1,105 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
-import com.example.miniprojet_genie_logiciel.entities.*;
-import com.example.miniprojet_genie_logiciel.services.ProductBacklogService;
 import com.example.miniprojet_genie_logiciel.dto.*;
-import com.example.miniprojet_genie_logiciel.mapper.ProductBacklogMapper;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.miniprojet_genie_logiciel.entities.Status;
+import com.example.miniprojet_genie_logiciel.services.ProductBacklogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/product-backlog")
+@RequestMapping("/api/product-backlogs")
 @RequiredArgsConstructor
 public class ProductBacklogController {
 
-    private final ProductBacklogService productBacklogService;
-    private final ProductBacklogMapper productBacklogMapper;
+    private final ProductBacklogService backlogService;
+
+    // === CRUD PRODUCT BACKLOG ===
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public ProductBacklogDTO createBacklog(@RequestBody ProductBacklogDTO dto) {
+        return backlogService.createBacklog(dto);
+    }
 
     @GetMapping
-    public ResponseEntity<List<ProductBacklogDTO>> getAll() {
-        List<ProductBacklogDTO> productBacklogs = productBacklogService.findAll();
-        return ResponseEntity.ok(productBacklogs);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public List<ProductBacklogDTO> getAllBacklogs() {
+        return backlogService.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductBacklogDTO> getById(@PathVariable Long id) {
-        return productBacklogService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public ResponseEntity<ProductBacklogDTO> create(@RequestBody ProductBacklogDTO productBacklogDTO) {
-        ProductBacklogDTO saved = productBacklogService.saveProductBacklog(productBacklogDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public Optional<ProductBacklogDTO> getBacklogById(@PathVariable Long id) {
+        return backlogService.findById(id);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductBacklogDTO> update(@PathVariable Long id,
-                                                 @RequestBody ProductBacklogDTO productBacklogDTO) {
-        ProductBacklogDTO updated = productBacklogService.updateProductBacklog(productBacklogDTO, id);
-        return ResponseEntity.ok(updated);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public ProductBacklogDTO updateBacklog(@PathVariable Long id, @RequestBody ProductBacklogDTO dto) {
+        return backlogService.updateBacklog(id, dto);
     }
 
-    // Supprimer un ProductBacklog par son id
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        try {
-            productBacklogService.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteBacklog(@PathVariable Long id) {
+        backlogService.deleteById(id);
     }
 
-    // Ajouter un Epic à un ProductBacklog
-    @PostMapping("/{backlogId}/link-epic/{epicId}")
-    public ResponseEntity<ProductBacklogDTO> addEpic(@PathVariable Long backlogId,
-                                                  @PathVariable Long epicId) {
-        try {
-            ProductBacklogDTO updated = productBacklogService.addEpicToProductBacklog(backlogId, epicId);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    // === EPICS ===
+
+    @PostMapping("/{backlogId}/epics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public EpicDTO createEpic(@PathVariable Long backlogId, @RequestBody CreateEpicDTO dto) {
+        return backlogService.createEpic(backlogId, dto);
     }
 
-    @DeleteMapping("/{backlogId}/unlink-epic/{epicId}")
-    public ResponseEntity<ProductBacklogDTO> removeEpic(@PathVariable Long backlogId,
-                                                     @PathVariable Long epicId) {
-        try {
-            ProductBacklogDTO updated = productBacklogService.removeEpicFromProductBacklog(backlogId, epicId);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping("/{backlogId}/epics/{epicId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public void deleteEpic(@PathVariable Long backlogId, @PathVariable Long epicId) {
+        backlogService.deleteEpic(backlogId, epicId);
     }
 
-    // Ajouter une UserStory à un ProductBacklog
-    @PostMapping("/{backlogId}/link-us/{usId}")
-    public ResponseEntity<ProductBacklogDTO> addUserStory(@PathVariable Long backlogId,
-                                                       @PathVariable Long usId) {
-        try {
-            ProductBacklogDTO updated = productBacklogService.addUserStoryToProductBacklog(backlogId, usId);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    // === USER STORIES ===
+
+    @PostMapping("/{backlogId}/user-stories")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public UserStoryDTO createUserStory(@PathVariable Long backlogId, @RequestBody CreateUserStoryDTO dto) {
+        return backlogService.createUserStory(backlogId, dto);
     }
 
-    @DeleteMapping("/{backlogId}/unlink-us/{usId}")
-    public ResponseEntity<ProductBacklogDTO> removeUserStory(@PathVariable Long backlogId,
-                                                          @PathVariable Long usId) {
-        try {
-            ProductBacklogDTO updated = productBacklogService.removeUserStoryFromProductBacklog(backlogId, usId);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping("/{backlogId}/user-stories/{storyId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
+    public void deleteUserStory(@PathVariable Long backlogId, @PathVariable Long storyId) {
+        backlogService.deleteUserStory(backlogId, storyId);
     }
 
-    // Récupérer les UserStories triées par priorité (méthode MoSCoW)
-    @GetMapping("/{backlogId}/user-stories/prioritized")
-    public ResponseEntity<List<UserStoryDTO>> getPrioritizedUserStories(@PathVariable Long backlogId) {
-        try {
-            List<UserStoryDTO> prioritized = productBacklogService.prioritizeUserStoriesMoscow(backlogId);
-            return ResponseEntity.ok(prioritized);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    // === MOSCOW PRIORITIZATION ===
+
+    @GetMapping("/{backlogId}/prioritize")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public List<UserStoryDTO> prioritizeUserStories(@PathVariable Long backlogId) {
+        return backlogService.prioritizeUserStories(backlogId);
     }
 
-    @GetMapping("/{backlogId}/user-stories/filter")
-    public ResponseEntity<List<UserStoryDTO>> filterUserStories(
+    // === FILTERING ===
+
+    @GetMapping("/{backlogId}/filter")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public List<UserStoryDTO> filterUserStories(
             @PathVariable Long backlogId,
-            @RequestParam(required = false) StatusDTO status,
-            @RequestParam(required = false) PriorityDTO priority,
-            @RequestParam(required = false) String keyword) {
-
-        List<UserStoryDTO> result = productBacklogService.filterUserStories(backlogId, status, priority, keyword);
-        return ResponseEntity.ok(result);
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String keyword
+    ) {
+        PriorityDTO priorityDTO = null;
+        if (priority != null && !priority.isBlank()) {
+            priorityDTO = new PriorityDTO(null, priority, null);
+        }
+        return backlogService.filterUserStories(backlogId, status, priorityDTO, keyword);
     }
-
 
 }
-

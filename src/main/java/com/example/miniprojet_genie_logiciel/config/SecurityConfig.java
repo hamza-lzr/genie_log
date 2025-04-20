@@ -34,12 +34,14 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Login & Register accessibles
                         .requestMatchers(
+                                "/api/auth/authenticate",
+                                "/api/auth/register",  // Autoriser le register
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+
                         .anyRequest().authenticated() // Le reste = besoin de token
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

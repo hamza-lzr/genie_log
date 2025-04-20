@@ -1,12 +1,10 @@
 package com.example.miniprojet_genie_logiciel.controllers;
 
+import com.example.miniprojet_genie_logiciel.dto.CreateTaskDTO;
 import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
-import com.example.miniprojet_genie_logiciel.entities.Task;
-import com.example.miniprojet_genie_logiciel.mapper.TaskMapper;
+import com.example.miniprojet_genie_logiciel.dto.UpdateTaskDTO;
 import com.example.miniprojet_genie_logiciel.services.TaskService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,67 +17,41 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
-    private final TaskMapper taskMapper;
 
-    // Récupérer toutes les Tasks
-    @GetMapping
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        List<TaskDTO> taskDTOs = taskService.getAllTasks();
-        return ResponseEntity.ok(taskDTOs);
-    }
-
-    // Récupérer une Task par son id
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
-        return taskService.getTaskById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // Créer une nouvelle Task
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
-        TaskDTO created = taskService.createTask(taskDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public ResponseEntity<TaskDTO> createTask(@RequestBody CreateTaskDTO dto) {
+        return ResponseEntity.ok(taskService.createTask(dto));
     }
 
-    // Mettre à jour une Task (incluant le statut)
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<TaskDTO> getTask(@PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getTaskById(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<List<TaskDTO>> getAllTasks() {
+        return ResponseEntity.ok(taskService.getAllTasks());
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody TaskDTO taskDTO) {
-        taskDTO.setId(id);
-        try {
-            TaskDTO updated = taskService.updateTask(taskDTO);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER')")
+    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody UpdateTaskDTO dto) {
+        return ResponseEntity.ok(taskService.updateTask(id, dto));
     }
 
-    // Supprimer une Task par son id
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        try {
-            taskService.deleteTask(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // Mettre à jour le status d'une Task (ex: To Do, In Progress, Done)
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    @PutMapping("/{id}/status")
-    public ResponseEntity<TaskDTO> updateTaskStatus(@PathVariable Long id,
-                                                 @RequestParam String status) {
-        try {
-            TaskDTO updated = taskService.updateTaskStatus(id, status);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @GetMapping("/userstory/{userStoryId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<List<TaskDTO>> getTasksByUserStory(@PathVariable Long userStoryId) {
+        return ResponseEntity.ok(taskService.getTasksByUserStory(userStoryId));
     }
 }
-

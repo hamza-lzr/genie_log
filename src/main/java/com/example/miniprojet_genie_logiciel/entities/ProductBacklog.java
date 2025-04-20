@@ -21,11 +21,12 @@ public class ProductBacklog {
     @Column
     private String description;
 
-    @OneToOne
+    @JsonIgnore
+    @ManyToOne
     private Project project;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(mappedBy = "productBacklog")
     private List<Epic> epics;
 
     @JsonIgnore

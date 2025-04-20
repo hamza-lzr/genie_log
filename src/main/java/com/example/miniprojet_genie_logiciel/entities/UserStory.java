@@ -15,50 +15,36 @@ public class UserStory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
     private String title;
 
-    @Column
-    private String role;
-
-    @Column
-    private String action;
-
-    @Column
-    private String goal;
-
-    @Column
     private Integer storyPoints;
 
-    @Column
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @Enumerated(EnumType.STRING)
+    private Priority priority;
+
+    private String acceptanceCriteria;
+
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "epic_id")
     private Epic epic;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name="product_backlog_id")
     private ProductBacklog productBacklog;
 
-    @ManyToOne //dois je ajouter un mapped by ?
-    @JoinColumn(name = "sprintBacklog_id")
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "sprint_backlog_id")
     private SprintBacklog sprintBacklog;
 
     @OneToMany(mappedBy = "userStory", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Task> tasks;
-
-
-    @Column
-    @Enumerated(EnumType.STRING) // Stocke "Must Have", "Should Have", etc. en base
-    private Priority priority;
-
-    @Column
-    private String acceptanceCriteria;
-
-
 }
 
 

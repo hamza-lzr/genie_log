@@ -1,6 +1,6 @@
 package com.example.miniprojet_genie_logiciel.dto;
 
-public enum StatusDTO {
+public enum Status {
     TO_DO,
     IN_PROGRESS,
     DONE,
