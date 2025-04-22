@@ -2,6 +2,7 @@ package com.example.miniprojet_genie_logiciel.controllers;
 
 import com.example.miniprojet_genie_logiciel.dto.CreateSprintBacklogDTO;
 import com.example.miniprojet_genie_logiciel.dto.SprintBacklogDTO;
+import com.example.miniprojet_genie_logiciel.dto.TaskDTO;
 import com.example.miniprojet_genie_logiciel.services.SprintBacklogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -62,4 +63,11 @@ public class SprintBacklogController {
         SprintBacklogDTO updated = sprintBacklogService.removeUserStoryFromSprint(sprintId, userStoryId);
         return ResponseEntity.ok(updated);
     }
+
+    @GetMapping("/{sprintId}/tasks")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_OWNER', 'SCRUM_MASTER', 'DEVELOPER')")
+    public ResponseEntity<List<TaskDTO>> getAllSprintTasks(@PathVariable Long sprintId) {
+        return ResponseEntity.ok(sprintBacklogService.getAllTasksInSprint(sprintId));
+    }
+
 }

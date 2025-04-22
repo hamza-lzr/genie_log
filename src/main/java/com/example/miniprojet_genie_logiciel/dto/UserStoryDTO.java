@@ -3,7 +3,9 @@ package com.example.miniprojet_genie_logiciel.dto;
 import com.example.miniprojet_genie_logiciel.entities.Priority;
 import com.example.miniprojet_genie_logiciel.entities.Status;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 @Data
 public class UserStoryDTO {
     private Long id;

@@ -25,12 +25,12 @@ public class SprintBacklog {
     @Enumerated(EnumType.STRING)
     private Status status; // Utilise la même enum "Status" que UserStory et Task
 
-    // ⚠️ Les UserStories assignées à ce sprint (elles peuvent aussi exister dans le ProductBacklog)
+
     @OneToMany(mappedBy = "sprintBacklog", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<UserStory> userStories;
 
-    // ⚠️ Les tâches ne sont jamais directement liées au SprintBacklog mais indirectement via UserStories
+
     @Transient
     public List<Task> getAllTasks() {
         return userStories == null ? List.of()
